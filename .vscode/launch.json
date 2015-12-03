@@ -1,0 +1,191 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch Extension",
+            "type": "extensionHost",
+            "request": "launch",
+            "runtimeExecutable": "${execPath}",
+            "args": [
+                "--extensionDevelopmentPath=${workspaceRoot}"
+            ],
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceRoot}/dist/*.js"
+            ],
+            "preLaunchTask": "buildDev"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Unit tests",
+            "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+            "args": [
+                "-u",
+                "tdd",
+                "--timeout",
+                "999999",
+                "--colors",
+                "${workspaceFolder}/out/test/unitTests/**/*.test.js"
+            ],
+            "sourceMaps": true,
+            "internalConsoleOptions": "openOnSessionStart",
+            "outFiles": [
+                "${workspaceRoot}/out/test/**/*.js"
+            ],
+            "preLaunchTask": "build"
+        },
+        {
+            "name": "Launch Feature Tests",
+            "type": "extensionHost",
+            "request": "launch",
+            "runtimeExecutable": "${execPath}",
+            "args": [
+                "--disable-extensions",
+                "--extensionDevelopmentPath=${workspaceRoot}",
+                "--extensionTestsPath=${workspaceRoot}/out/test/featureTests"
+            ],
+            "env": {
+                "CODE_WORKSPACE_ROOT": "${workspaceRoot}",
+                "CODE_TESTS_PATH": "${workspaceRoot}/out/test/featureTests",
+                "CODE_EXTENSIONS_PATH": "${workspaceRoot}",
+                "OSVC_SUITE": "featureTests"
+            },
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceRoot}/out/test/**/*.js"
+            ],
+            "preLaunchTask": "build"
+        },
+        {
+            "name": "Launch singleCsproj Workspace Tests",
+            "type": "extensionHost",
+            "request": "launch",
+            "runtimeExecutable": "${execPath}",
+            "args": [
+                "--disable-extensions",
+                "${workspaceRoot}/test/integrationTests/testAssets/singleCsproj",
+                "--extensionDevelopmentPath=${workspaceRoot}",
+                "--extensionTestsPath=${workspaceRoot}/out/test/integrationTests"
+            ],
+            "env": {
+                "CODE_WORKSPACE_ROOT": "${workspaceRoot}",
+                "CODE_TESTS_PATH": "${workspaceRoot}/out/test/integrationTests",
+                "CODE_TESTS_WORKSPACE": "${workspaceRoot}/test/integrationTests/testAssets/singleCsproj",
+                "CODE_EXTENSIONS_PATH": "${workspaceRoot}",
+                "OSVC_SUITE": "singleCsproj"
+            },
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceRoot}/dist/*.js"
+            ],
+            "preLaunchTask": "buildDev"
+        },
+        {
+            "name": "Launch razorcsproj Workspace Tests",
+            "type": "extensionHost",
+            "request": "launch",
+            "runtimeExecutable": "${execPath}",
+            "args": [
+                "--disable-extensions",
+                "${workspaceRoot}/test/integrationTests/testAssets/BasicRazorApp2_1",
+                "--extensionDevelopmentPath=${workspaceRoot}",
+                "--extensionTestsPath=${workspaceRoot}/out/test/integrationTests"
+            ],
+            "env": {
+                "CODE_WORKSPACE_ROOT": "${workspaceRoot}",
+                "CODE_TESTS_PATH": "${workspaceRoot}/out/test/integrationTests",
+                "CODE_TESTS_WORKSPACE": "${workspaceRoot}/test/integrationTests/testAssets/BasicRazorApp2_1",
+                "CODE_EXTENSIONS_PATH": "${workspaceRoot}",
+                "OSVC_SUITE": "BasicRazorApp2_1"
+            },
+        },
+        {
+            "name": "Launch slnWithCsproj Workspace Tests",
+            "type": "extensionHost",
+            "request": "launch",
+            "runtimeExecutable": "${execPath}",
+            "args": [
+                "--disable-extensions",
+                "${workspaceRoot}/test/integrationTests/testAssets/slnWithCsproj",
+                "--extensionDevelopmentPath=${workspaceRoot}",
+                "--extensionTestsPath=${workspaceRoot}/out/test/integrationTests"
+            ],
+            "env": {
+                "CODE_WORKSPACE_ROOT": "${workspaceRoot}",
+                "CODE_TESTS_PATH": "${workspaceRoot}/out/test/integrationTests",
+                "CODE_TESTS_WORKSPACE": "${workspaceRoot}/test/integrationTests/testAssets/slnWithCsproj",
+                "CODE_EXTENSIONS_PATH": "${workspaceRoot}",
+                "OSVC_SUITE": "slnWithCsproj"
+            },
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceRoot}/dist/*.js"
+            ],
+            "preLaunchTask": "buildDev"
+        },
+        {
+            "name": "Launch slnFilterWithCsproj Workspace Tests",
+            "type": "extensionHost",
+            "request": "launch",
+            "runtimeExecutable": "${execPath}",
+            "args": [
+                "--disable-extensions",
+                "${workspaceRoot}/test/integrationTests/testAssets/slnFilterWithCsproj",
+                "--extensionDevelopmentPath=${workspaceRoot}",
+                "--extensionTestsPath=${workspaceRoot}/out/test/integrationTests"
+            ],
+            "env": {
+                "CODE_WORKSPACE_ROOT": "${workspaceRoot}",
+                "CODE_TESTS_PATH": "${workspaceRoot}/out/test/integrationTests",
+                "CODE_TESTS_WORKSPACE": "${workspaceRoot}/test/integrationTests/testAssets/slnFilterWithCsproj",
+                "CODE_EXTENSIONS_PATH": "${workspaceRoot}",
+                "OSVC_SUITE": "slnFilterWithCsproj"
+            },
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceRoot}/dist/*.js"
+            ],
+            "preLaunchTask": "buildDev"
+        },
+        {
+            "name": "Launch slnWithGenerator Workspace Tests",
+            "type": "extensionHost",
+            "request": "launch",
+            "runtimeExecutable": "${execPath}",
+            "args": [
+                "--disable-extensions",
+                "${workspaceRoot}/test/integrationTests/testAssets/slnWithGenerator",
+                "--extensionDevelopmentPath=${workspaceRoot}",
+                "--extensionTestsPath=${workspaceRoot}/out/test/integrationTests"
+            ],
+            "env": {
+                "CODE_WORKSPACE_ROOT": "${workspaceRoot}",
+                "CODE_TESTS_PATH": "${workspaceRoot}/out/test/integrationTests",
+                "CODE_TESTS_WORKSPACE": "${workspaceRoot}/test/integrationTests/testAssets/slnWithGenerator",
+                "CODE_EXTENSIONS_PATH": "${workspaceRoot}",
+                "OSVC_SUITE": "slnWithGenerator"
+            },
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceRoot}/dist/*.js"
+            ],
+            "preLaunchTask": "buildDev"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Update package dependencies",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/node_modules/gulp/bin/gulp.js",
+            "args": [
+                "updatePackageDependencies"
+            ],
+            "env": {
+                "NEW_DEPS_URLS": "https://roslynomnisharp.blob.core.windows.net/releases/1.39.0/omnisharp-linux-x64-1.39.0.zip,https://roslynomnisharp.blob.core.windows.net/releases/1.39.0/omnisharp-linux-x86-1.39.0.zip,https://roslynomnisharp.blob.core.windows.net/releases/1.39.0/omnisharp-linux-arm64-1.39.0.zip,https://roslynomnisharp.blob.core.windows.net/releases/1.39.0/omnisharp-osx-1.39.0.zip,https://roslynomnisharp.blob.core.windows.net/releases/1.39.0/omnisharp-win-x64-1.39.0.zip,https://roslynomnisharp.blob.core.windows.net/releases/1.39.0/omnisharp-win-x86-1.39.0.zip,https://roslynomnisharp.blob.core.windows.net/releases/1.39.0/omnisharp-win-arm64-1.39.0.zip,https://roslynomnisharp.blob.core.windows.net/releases/1.39.0/omnisharp-linux-musl-x64-net6.0-1.39.0.zip,https://roslynomnisharp.blob.core.windows.net/releases/1.39.0/omnisharp-linux-musl-arm64-net6.0-1.39.0.zip,https://roslynomnisharp.blob.core.windows.net/releases/1.39.0/omnisharp-linux-x64-net6.0-1.39.0.zip,https://roslynomnisharp.blob.core.windows.net/releases/1.39.0/omnisharp-linux-arm64-net6.0-1.39.0.zip,https://roslynomnisharp.blob.core.windows.net/releases/1.39.0/omnisharp-osx-x64-net6.0-1.39.0.zip,https://roslynomnisharp.blob.core.windows.net/releases/1.39.0/omnisharp-osx-arm64-net6.0-1.39.0.zip,https://roslynomnisharp.blob.core.windows.net/releases/1.39.0/omnisharp-win-x64-net6.0-1.39.0.zip,https://roslynomnisharp.blob.core.windows.net/releases/1.39.0/omnisharp-win-x86-net6.0-1.39.0.zip,https://roslynomnisharp.blob.core.windows.net/releases/1.39.0/omnisharp-win-arm64-net6.0-1.39.0.zip",
+                "NEW_DEPS_VERSION": "1.39.0"
+            },
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
