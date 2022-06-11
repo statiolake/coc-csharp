@@ -11,8 +11,7 @@ export interface DotnetPackExtensionExports {
 }
 
 export async function getDotnetPackApi(): Promise<DotnetPackExtensionExports> {
-    // @ts-ignore
-    const dotnetExtension: coc.Extension = coc.extensions.getExtension<DotnetPackExtensionExports>(dotnetPackExtensionId);
+    const dotnetExtension: coc.Extension<DotnetPackExtensionExports> = coc.extensions.all.find(e => e.id == dotnetPackExtensionId) as coc.Extension<DotnetPackExtensionExports>;
     if (!dotnetExtension) {
         return null;
     }

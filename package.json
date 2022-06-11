@@ -1,5 +1,5 @@
 {
-  "name": "csharp",
+  "name": "coc-csharp-vscode",
   "publisher": "ms-dotnettools",
   "version": "1.25.0",
   "description": "C# for Visual Studio Code (powered by OmniSharp).",
@@ -38,7 +38,7 @@
     "omniSharp": "1.39.0",
     "razor": "6.0.0-preview.5.21358.6"
   },
-  "main": "./dist/extension",
+  "main": "./dist/extension.js",
   "scripts": {
     "compile": "tsc -p ./",
     "compileDev": "tsc -p ./ && webpack --mode development",
@@ -573,11 +573,7 @@
     "coc": "^0.0.81"
   },
   "activationEvents": [
-    "onDebugInitialConfigurations",
-    "onDebugResolve:blazorwasm",
-    "onDebugResolve:coreclr",
-    "onDebugResolve:clr",
-    "onLanguage:csharp",
+    "onLanguage:cs",
     "onLanguage:aspnetcorerazor",
     "onCommand:o.restart",
     "onCommand:o.pickProjectAndStart",

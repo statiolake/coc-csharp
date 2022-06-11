@@ -42,8 +42,7 @@ import { BackgroundWorkStatusBarObserver } from './observers/BackgroundWorkStatu
 import { getDotnetPackApi } from './DotnetPack';
 
 export async function activate(context: coc.ExtensionContext): Promise<CSharpExtensionExports> {
-    // @ts-ignore
-    const extension: coc.Extension = coc.extensions.getExtension(CSharpExtensionId);
+    const extension: coc.Extension<CSharpExtensionExports> = coc.extensions.all.find(e => e.id == CSharpExtensionId) as coc.Extension<CSharpExtensionExports>;
     util.setExtensionPath(context.extensionPath);
 
     const eventStream = new EventStream();
@@ -62,7 +61,7 @@ export async function activate(context: coc.ExtensionContext): Promise<CSharpExt
     eventStream.subscribe(dotnetTestChannelObserver.post);
     eventStream.subscribe(dotnetTestLoggerObserver.post);
 
-    let csharpChannel = coc.window.createOutputChannel('C#');
+    let csharpChannel = coc.window.createOutputChannel('coc-csharp-vscode');
     let csharpchannelObserver = new CsharpChannelObserver(csharpChannel);
     let csharpLogObserver = new CsharpLoggerObserver(csharpChannel);
     eventStream.subscribe(csharpchannelObserver.post);
