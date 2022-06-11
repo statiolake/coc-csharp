@@ -6,14 +6,14 @@
 import AbstractSupport from './abstractProvider';
 import * as protocol from '../omnisharp/protocol';
 import * as serverUtils from '../omnisharp/utils';
-import { DocumentRangeFormattingEditProvider, FormattingOptions, CancellationToken, TextEdit, TextDocument, Range, Position } from 'vscode';
+import { DocumentRangeFormattingEditProvider, FormattingOptions, CancellationToken, TextEdit, TextDocument, Range, Position, Uri } from 'coc.nvim';
 
 export default class FormattingSupport extends AbstractSupport implements DocumentRangeFormattingEditProvider {
 
     public async provideDocumentRangeFormattingEdits(document: TextDocument, range: Range, options: FormattingOptions, token: CancellationToken): Promise<TextEdit[]> {
 
         let request = <protocol.FormatRangeRequest>{
-            FileName: document.fileName,
+            FileName: Uri.parse(document.uri).fsPath,
             Line: range.start.line,
             Column: range.start.character,
             EndLine: range.end.line,
@@ -34,7 +34,7 @@ export default class FormattingSupport extends AbstractSupport implements Docume
     public async provideOnTypeFormattingEdits(document: TextDocument, position: Position, ch: string, options: FormattingOptions, token: CancellationToken): Promise<TextEdit[]> {
 
         let request = <protocol.FormatAfterKeystrokeRequest>{
-            FileName: document.fileName,
+            FileName: Uri.parse(document.uri).fsPath,
             Line: position.line,
             Column: position.character,
             Character: ch
@@ -52,8 +52,18 @@ export default class FormattingSupport extends AbstractSupport implements Docume
     }
 
     private static _asEditOptionation(change: protocol.TextChange): TextEdit {
-        return new TextEdit(
-            new Range(change.StartLine, change.StartColumn, change.EndLine, change.EndColumn),
-            change.NewText);
+        return {
+            range: {
+                start: {
+                    line: change.StartLine,
+                    character: change.StartColumn,
+                },
+                end: {
+                    line: change.EndLine,
+                    character: change.EndColumn,
+                },
+            },
+            newText: change.NewText,
+        };
     }
 }

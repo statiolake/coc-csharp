@@ -3,16 +3,16 @@
 *  Licensed under the MIT License. See License.txt in the project root for license information.
 *--------------------------------------------------------------------------------------------*/
 
-import * as vscode from "vscode";
+import * as coc from "coc.nvim";
 import OptionProvider from "../observers/OptionProvider";
 
 const DecompilationAuthorizedOption = "csharp.decompilationAuthorized";
 
-export async function resetDecompilationAuthorization(context: vscode.ExtensionContext) {
+export async function resetDecompilationAuthorization(context: coc.ExtensionContext) {
     context.globalState.update(DecompilationAuthorizedOption, undefined);
 }
 
-export async function getDecompilationAuthorization(context: vscode.ExtensionContext, optionProvider: OptionProvider) {
+export async function getDecompilationAuthorization(context: coc.ExtensionContext, optionProvider: OptionProvider) {
     // If decompilation is disabled, then return false
     const options = optionProvider.GetLatestOptions();
     if (options.enableDecompilationSupport === false) {
@@ -39,7 +39,7 @@ enum PromptResult {
     No
 }
 
-interface PromptItem extends vscode.MessageItem {
+interface PromptItem extends coc.MessageItem {
     result: PromptResult;
 }
 
@@ -57,12 +57,10 @@ Your use of the Decompiler is optional.  Microsoft is not responsible and discla
 
 I agree to all of the foregoing:`;
 
-        const messageOptions: vscode.MessageOptions = { modal: true };
-
         const yesItem: PromptItem = { title: 'Yes', result: PromptResult.Yes };
         const noItem: PromptItem = { title: 'No', result: PromptResult.No, isCloseAffordance: true };
 
-        vscode.window.showWarningMessage(message, messageOptions, noItem, yesItem)
+        coc.window.showWarningMessage(message, noItem, yesItem)
             .then(selection => resolve(selection?.result ?? PromptResult.Dismissed));
     });
 }

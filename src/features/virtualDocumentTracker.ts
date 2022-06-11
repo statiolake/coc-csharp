@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { workspace, TextDocument, Uri } from 'vscode';
+import { workspace, TextDocument, Uri } from 'coc.nvim';
 import { OmniSharpServer } from '../omnisharp/server';
 import * as serverUtils from '../omnisharp/utils';
 import { FileChangeType } from '../omnisharp/protocol';
@@ -27,11 +27,11 @@ export function isVirtualCSharpDocument(document: TextDocument) {
         return false;
     }
 
-    if (document.uri.scheme === 'virtualCSharp-') {
+    if (Uri.parse(document.uri).scheme === 'virtualCSharp-') {
         return false;
     }
 
-    if (!document.uri.scheme.startsWith('virtualCSharp-')) {
+    if (!Uri.parse(document.uri).scheme.startsWith('virtualCSharp-')) {
         return false;
     }
 
@@ -48,7 +48,7 @@ function trackFutureVirtualDocuments(server: OmniSharpServer, eventStream: Event
     });
 
     let onTextDocumentChange = workspace.onDidChangeTextDocument(async changeEvent => {
-        const document = changeEvent.document;
+        const document = workspace.getDocument(changeEvent.textDocument.uri).textDocument;
 
         if (shouldIgnoreDocument(document, server)) {
             return;
@@ -86,10 +86,10 @@ function shouldIgnoreDocument(document: TextDocument, server: OmniSharpServer): 
 }
 
 async function openVirtualDocument(document: TextDocument, server: OmniSharpServer, eventStream: EventStream) {
-    let path = document.uri.fsPath;
+    let path = Uri.parse(document.uri).fsPath;
 
     if (!path) {
-        path = document.uri.path;
+        path = Uri.parse(document.uri).path;
     }
 
     let req = { FileName: path, changeType: FileChangeType.Create };
@@ -100,30 +100,30 @@ async function openVirtualDocument(document: TextDocument, server: OmniSharpServ
         await changeVirtualDocument(document, server, eventStream);
     }
     catch (error) {
-        logSynchronizationFailure(document.uri, error, server, eventStream);
+        logSynchronizationFailure(Uri.parse(document.uri), error, server, eventStream);
     }
 }
 
 async function changeVirtualDocument(document: TextDocument, server: OmniSharpServer, eventStream: EventStream) {
-    let path = document.uri.fsPath;
+    let path = Uri.parse(document.uri).fsPath;
 
     if (!path) {
-        path = document.uri.path;
+        path = Uri.parse(document.uri).path;
     }
 
     try {
-        await serverUtils.updateBuffer(server, { Buffer: document.getText(), FileName: document.fileName });
+        await serverUtils.updateBuffer(server, { Buffer: document.getText(), FileName: Uri.parse(document.uri).fsPath });
     }
     catch (error) {
-        logSynchronizationFailure(document.uri, error, server, eventStream);
+        logSynchronizationFailure(Uri.parse(document.uri), error, server, eventStream);
     }
 }
 
 async function closeVirtualDocument(document: TextDocument, server: OmniSharpServer, eventStream: EventStream) {
-    let path = document.uri.fsPath;
+    let path = Uri.parse(document.uri).fsPath;
 
     if (!path) {
-        path = document.uri.path;
+        path = Uri.parse(document.uri).path;
     }
 
     let req = { FileName: path, changeType: FileChangeType.Delete };
@@ -131,7 +131,7 @@ async function closeVirtualDocument(document: TextDocument, server: OmniSharpSer
         await serverUtils.filesChanged(server, [req]);
     }
     catch (error) {
-        logSynchronizationFailure(document.uri, error, server, eventStream);
+        logSynchronizationFailure(Uri.parse(document.uri), error, server, eventStream);
     }
 }
 

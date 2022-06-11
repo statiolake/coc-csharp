@@ -9,8 +9,8 @@ import { configure as configureXHR, xhr } from 'request-light';
 
 import {
     CompletionItem, CompletionItemProvider, CompletionList, TextDocument, Position, Hover, HoverProvider,
-    CancellationToken, Range, MarkedString, DocumentSelector, languages, workspace
-} from 'vscode';
+    CancellationToken, Range, DocumentSelector, languages, workspace, Thenable, MarkupContent, Uri
+} from 'coc.nvim';
 import CompositeDisposable from '../../CompositeDisposable';
 
 export interface ISuggestionsCollector {
@@ -22,7 +22,7 @@ export interface ISuggestionsCollector {
 
 export interface IJSONContribution {
     getDocumentSelector(): DocumentSelector;
-    getInfoContribution(fileName: string, location: Location): Thenable<MarkedString[]>;
+    getInfoContribution(fileName: string, location: Location): Thenable<MarkupContent>;
     collectPropertySuggestions(fileName: string, location: Location, currentWord: string, addValue: boolean, isLast: boolean, result: ISuggestionsCollector): Thenable<void>;
     collectValueSuggestions(fileName: string, location: Location, result: ISuggestionsCollector): Thenable<void>;
     collectDefaultSuggestions(fileName: string, result: ISuggestionsCollector): Thenable<void>;
@@ -46,7 +46,7 @@ export function addJSONProviders(): CompositeDisposable {
     contributions.forEach(contribution => {
         let selector = contribution.getDocumentSelector();
         let triggerCharacters = ['"', ':', '.', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-        subscriptions.add(languages.registerCompletionItemProvider(selector, new JSONCompletionItemProvider(contribution), ...triggerCharacters));
+        subscriptions.add(languages.registerCompletionItemProvider("OmniSharpJSON", "OS", selector, new JSONCompletionItemProvider(contribution), triggerCharacters));
         subscriptions.add(languages.registerHoverProvider(selector, new JSONHoverProvider(contribution)));
     });
 
@@ -63,11 +63,14 @@ export class JSONHoverProvider implements HoverProvider {
         let location = getLocation(document.getText(), offset);
         let node = location.previousNode;
         if (node && node.offset <= offset && offset <= node.offset + node.length) {
-            let promise = this.jsonContribution.getInfoContribution(document.fileName, location);
+            let promise = this.jsonContribution.getInfoContribution(Uri.parse(document.uri).fsPath, location);
             if (promise) {
                 return promise.then(htmlContent => {
-                    let range = new Range(document.positionAt(node.offset), document.positionAt(node.offset + node.length));
-                    let result: Hover = {
+                    const range: Range = {
+                        start: document.positionAt(node.offset),
+                        end: document.positionAt(node.offset + node.length)
+                    };
+                    const result: Hover = {
                         contents: htmlContent,
                         range: range
                     };
@@ -105,9 +108,15 @@ export class JSONCompletionItemProvider implements CompletionItemProvider {
 
         let node = location.previousNode;
         if (node && node.offset <= offset && offset <= node.offset + node.length && (node.type === 'property' || node.type === 'string' || node.type === 'number' || node.type === 'boolean' || node.type === 'null')) {
-            overwriteRange = new Range(document.positionAt(node.offset), document.positionAt(node.offset + node.length));
+            overwriteRange = {
+                start: document.positionAt(node.offset),
+                end: document.positionAt(node.offset + node.length),
+            };
         } else {
-            overwriteRange = new Range(document.positionAt(offset - currentWord.length), position);
+            overwriteRange = {
+                start: document.positionAt(offset - currentWord.length),
+                end: position
+            };
         }
 
         let proposed: { [key: string]: boolean } = {};
@@ -116,8 +125,10 @@ export class JSONCompletionItemProvider implements CompletionItemProvider {
                 if (!proposed[<string>suggestion.label]) {
                     proposed[<string>suggestion.label] = true;
                     if (overwriteRange) {
-                        suggestion.insertText = suggestion.insertText;
-                        suggestion.range = overwriteRange;
+                        suggestion.textEdit = {
+                            range: overwriteRange,
+                            newText: suggestion.insertText,
+                        }
                     }
 
                     items.push(suggestion);
@@ -136,18 +147,21 @@ export class JSONCompletionItemProvider implements CompletionItemProvider {
             scanner.setPosition(offset);
             scanner.scan();
             let isLast = scanner.getToken() === SyntaxKind.CloseBraceToken || scanner.getToken() === SyntaxKind.EOF;
-            collectPromise = this.jsonContribution.collectPropertySuggestions(document.fileName, location, currentWord, addValue, isLast, collector);
+            collectPromise = this.jsonContribution.collectPropertySuggestions(Uri.parse(document.uri).fsPath, location, currentWord, addValue, isLast, collector);
         } else {
             if (location.path.length === 0) {
-                collectPromise = this.jsonContribution.collectDefaultSuggestions(document.fileName, collector);
+                collectPromise = this.jsonContribution.collectDefaultSuggestions(Uri.parse(document.uri).fsPath, collector);
             } else {
-                collectPromise = this.jsonContribution.collectValueSuggestions(document.fileName, location, collector);
+                collectPromise = this.jsonContribution.collectValueSuggestions(Uri.parse(document.uri).fsPath, location, collector);
             }
         }
         if (collectPromise) {
             return collectPromise.then(() => {
                 if (items.length > 0) {
-                    return new CompletionList(items, isIncomplete);
+                    return {
+                        items,
+                        isIncomplete,
+                    };
                 }
                 return null;
             });
@@ -157,7 +171,7 @@ export class JSONCompletionItemProvider implements CompletionItemProvider {
 
     private getCurrentWord(document: TextDocument, position: Position) {
         let i = position.character - 1;
-        let text = document.lineAt(position.line).text;
+        let text = workspace.getDocument(document.uri).getline(position.line);
         while (i >= 0 && ' \t\n\r\v":{[,'.indexOf(text.charAt(i)) === -1) {
             i--;
         }

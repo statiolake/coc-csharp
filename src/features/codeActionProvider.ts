@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as vscode from 'vscode';
+import * as coc from 'coc.nvim';
 import { OmniSharpServer } from '../omnisharp/server';
 import AbstractProvider from './abstractProvider';
 import * as protocol from '../omnisharp/protocol';
@@ -13,17 +13,17 @@ import OptionProvider from '../observers/OptionProvider';
 import { LanguageMiddlewareFeature } from '../omnisharp/LanguageMiddlewareFeature';
 import { buildEditForResponse } from '../omnisharp/fileOperationsResponseEditBuilder';
 
-export default class CodeActionProvider extends AbstractProvider implements vscode.CodeActionProvider<vscode.CodeAction> {
+export default class CodeActionProvider extends AbstractProvider implements coc.CodeActionProvider<coc.CodeAction> {
     private _commandId: string;
 
     constructor(server: OmniSharpServer, private optionProvider: OptionProvider, languageMiddlewareFeature: LanguageMiddlewareFeature) {
         super(server, languageMiddlewareFeature);
         this._commandId = 'omnisharp.runCodeAction';
-        const registerCommandDisposable = vscode.commands.registerCommand(this._commandId, this._runCodeAction, this);
+        const registerCommandDisposable = coc.commands.registerCommand(this._commandId, this._runCodeAction, this);
         this.addDisposables(new CompositeDisposable(registerCommandDisposable));
     }
 
-    public async provideCodeActions(document: vscode.TextDocument, range: vscode.Range | vscode.Selection, context: vscode.CodeActionContext, token: vscode.CancellationToken): Promise<vscode.CodeAction[]> {
+    public async provideCodeActions(document: coc.TextDocument, range: coc.Range, context: coc.CodeActionContext, token: coc.CancellationToken): Promise<coc.CodeAction[]> {
         const options = this.optionProvider.GetLatestOptions();
         if (options.disableCodeActions) {
             return;
@@ -33,7 +33,7 @@ export default class CodeActionProvider extends AbstractProvider implements vsco
         const column = range.start.character;
 
         const request: protocol.V2.GetCodeActionsRequest = {
-            FileName: document.fileName,
+            FileName: coc.Uri.parse(document.uri).fsPath,
             Line: line,
             Column: column,
         };
@@ -42,7 +42,7 @@ export default class CodeActionProvider extends AbstractProvider implements vsco
         // If there is no selection and the editor isn't focused,
         // VS Code will pass us an empty Selection rather than a Range,
         // hence the extra range.isEmpty check.
-        if (range instanceof vscode.Selection && !range.isEmpty) {
+        if (range) {
             request.Selection = {
                 Start: { Line: range.start.line, Column: range.start.character },
                 End: { Line: range.end.line, Column: range.end.character }
@@ -74,7 +74,7 @@ export default class CodeActionProvider extends AbstractProvider implements vsco
         }
     }
 
-    private async _runCodeAction(req: protocol.V2.RunCodeActionRequest, token: vscode.CancellationToken): Promise<boolean | string | {}> {
+    private async _runCodeAction(req: protocol.V2.RunCodeActionRequest, token: coc.CancellationToken): Promise<boolean | string | {}> {
         try {
             const response = await serverUtils.runCodeAction(this._server, req);
             if (response) {

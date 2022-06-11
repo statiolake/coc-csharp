@@ -4,12 +4,11 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { BaseEvent, ZipError, DotNetTestRunFailure, DotNetTestDebugStartFailure, IntegrityCheckFailure } from "../omnisharp/loggingEvents";
-import { vscode } from "../vscodeAdapter";
 import showErrorMessage from "./utils/ShowErrorMessage";
 import { EventType } from "../omnisharp/EventType";
 
 export class ErrorMessageObserver {
-    constructor(private vscode: vscode) {
+    constructor() {
     }
 
     public post = (event: BaseEvent) => {
@@ -30,19 +29,19 @@ export class ErrorMessageObserver {
 
     handleIntegrityCheckFailure(event: IntegrityCheckFailure) {
         if (!event.retry) {
-            showErrorMessage(this.vscode, `Package ${event.packageDescription} download from ${event.url} failed integrity check. Some features may not work as expected. Please restart Visual Studio Code to retrigger the download`);
+            showErrorMessage(`Package ${event.packageDescription} download from ${event.url} failed integrity check. Some features may not work as expected. Please restart Visual Studio Code to retrigger the download`);
         }
     }
 
     private handleZipError(event: ZipError) {
-        showErrorMessage(this.vscode, event.message);
+        showErrorMessage(event.message);
     }
 
     private handleDotnetTestRunFailure(event: DotNetTestRunFailure) {
-        showErrorMessage(this.vscode, `Failed to run test because ${event.message}.`);
+        showErrorMessage(`Failed to run test because ${event.message}.`);
     }
 
     private handleDotNetTestDebugStartFailure(event: DotNetTestDebugStartFailure) {
-        showErrorMessage(this.vscode, `Failed to start debugger: ${event.message}`);
+        showErrorMessage(`Failed to start debugger: ${event.message}`);
     }
 }

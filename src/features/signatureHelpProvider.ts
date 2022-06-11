@@ -6,8 +6,7 @@
 import AbstractSupport from './abstractProvider';
 import * as serverUtils from '../omnisharp/utils';
 import { createRequest } from '../omnisharp/typeConversion';
-import { SignatureHelpProvider, SignatureHelp, SignatureInformation, ParameterInformation, CancellationToken, TextDocument, Position } from 'vscode';
-import { MarkdownString } from 'vscode';
+import { SignatureHelpProvider, SignatureHelp, ParameterInformation, CancellationToken, TextDocument, Position, MarkupKind, MarkupContent } from 'coc.nvim';
 import { SignatureHelpParameter } from '../omnisharp/protocol';
 
 export default class OmniSharpSignatureHelpProvider extends AbstractSupport implements SignatureHelpProvider {
@@ -23,36 +22,44 @@ export default class OmniSharpSignatureHelpProvider extends AbstractSupport impl
                 return undefined;
             }
 
-            let ret = new SignatureHelp();
-            ret.activeSignature = res.ActiveSignature;
-            ret.activeParameter = res.ActiveParameter;
-
+            const signatures = []
             for (let signature of res.Signatures) {
 
-                let signatureInfo = new SignatureInformation(signature.Label, signature.StructuredDocumentation.SummaryText);
-                ret.signatures.push(signatureInfo);
-
+                const parameters: ParameterInformation[] = []
                 for (let parameter of signature.Parameters) {
-                    let parameterInfo = new ParameterInformation(
-                        parameter.Label,
-                        this.GetParameterDocumentation(parameter));
-
-                    signatureInfo.parameters.push(parameterInfo);
+                    let parameterInfo: ParameterInformation = {
+                        label: parameter.Label,
+                        documentation: this.GetParameterDocumentation(parameter),
+                    };
+                    parameters.push(parameterInfo);
                 }
+
+                signatures.push({
+                    label: signature.Label,
+                    documentation: signature.StructuredDocumentation.SummaryText,
+                    parameters,
+                });
             }
 
-            return ret;
+            return {
+                activeSignature: res.ActiveSignature,
+                activeParameter: res.ActiveParameter,
+                signatures,
+            };
         }
         catch (error) {
             return undefined;
         }
     }
 
-    private GetParameterDocumentation(parameter: SignatureHelpParameter) {
+    private GetParameterDocumentation(parameter: SignatureHelpParameter): string | MarkupContent {
         let summary = parameter.Documentation;
         if (summary.length > 0) {
             let paramText = `**${parameter.Name}**: ${summary}`;
-            return new MarkdownString(paramText);
+            return {
+                kind: MarkupKind.Markdown,
+                value: paramText,
+            }
         }
 
         return "";

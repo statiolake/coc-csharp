@@ -4,11 +4,9 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as utils from './utils';
-import * as vscode from 'vscode';
-import { AddAssetResult, addAssetsIfNecessary } from '../assets';
+import * as vscode from 'coc.nvim';
 import reportDiagnostics, { Advisor } from '../features/diagnosticsProvider';
 import { safeLength, sum } from '../common';
-import { CSharpConfigurationProvider } from '../configurationProvider';
 import CodeActionProvider from '../features/codeActionProvider';
 import CodeLensProvider from '../features/codeLensProvider';
 import CompletionProvider, { CompletionAfterInsertCommand } from '../features/completionProvider';
@@ -54,15 +52,13 @@ export interface ActivationResult {
 }
 
 export async function activate(context: vscode.ExtensionContext, packageJSON: any, platformInfo: PlatformInformation, provider: NetworkSettingsProvider, eventStream: EventStream, optionProvider: OptionProvider, extensionPath: string) {
-    const documentSelector: vscode.DocumentSelector = {
-        language: 'csharp',
-    };
+    const documentSelector: vscode.DocumentSelector = [{ language: 'cs' }];
 
     const options = optionProvider.GetLatestOptions();
     const omnisharpMonoResolver = new OmniSharpMonoResolver(getMonoVersion);
     const omnisharpDotnetResolver = new OmniSharpDotnetResolver(platformInfo);
     const decompilationAuthorized = await getDecompilationAuthorization(context, optionProvider);
-    const server = new OmniSharpServer(vscode, provider, packageJSON, platformInfo, eventStream, optionProvider, extensionPath, omnisharpMonoResolver, omnisharpDotnetResolver, decompilationAuthorized);
+    const server = new OmniSharpServer(provider, packageJSON, platformInfo, eventStream, optionProvider, extensionPath, omnisharpMonoResolver, omnisharpDotnetResolver, decompilationAuthorized);
     const advisor = new Advisor(server, optionProvider); // create before server is started
     const disposables = new CompositeDisposable();
     const languageMiddlewareFeature = new LanguageMiddlewareFeature();
@@ -83,34 +79,36 @@ export async function activate(context: vscode.ExtensionContext, packageJSON: an
         localDisposables.add(sourceGeneratedDocumentProvider);
         const definitionProvider = new DefinitionProvider(server, definitionMetadataDocumentProvider, sourceGeneratedDocumentProvider, languageMiddlewareFeature);
         localDisposables.add(vscode.languages.registerDefinitionProvider(documentSelector, definitionProvider));
-        localDisposables.add(vscode.languages.registerDefinitionProvider({ scheme: definitionMetadataDocumentProvider.scheme }, definitionProvider));
+        localDisposables.add(vscode.languages.registerDefinitionProvider([{ scheme: definitionMetadataDocumentProvider.scheme }], definitionProvider));
         localDisposables.add(vscode.languages.registerTypeDefinitionProvider(documentSelector, definitionProvider));
-        localDisposables.add(vscode.languages.registerTypeDefinitionProvider({ scheme: definitionMetadataDocumentProvider.scheme }, definitionProvider));
+        localDisposables.add(vscode.languages.registerTypeDefinitionProvider([{ scheme: definitionMetadataDocumentProvider.scheme }], definitionProvider));
         localDisposables.add(vscode.languages.registerImplementationProvider(documentSelector, new ImplementationProvider(server, languageMiddlewareFeature)));
         localDisposables.add(vscode.languages.registerCodeLensProvider(documentSelector, new CodeLensProvider(server, testManager, optionProvider, languageMiddlewareFeature)));
         localDisposables.add(vscode.languages.registerDocumentHighlightProvider(documentSelector, new DocumentHighlightProvider(server, languageMiddlewareFeature)));
         localDisposables.add(vscode.languages.registerDocumentSymbolProvider(documentSelector, new DocumentSymbolProvider(server, languageMiddlewareFeature)));
-        localDisposables.add(vscode.languages.registerReferenceProvider(documentSelector, new ReferenceProvider(server, languageMiddlewareFeature)));
+        localDisposables.add(vscode.languages.registerReferencesProvider(documentSelector, new ReferenceProvider(server, languageMiddlewareFeature)));
         localDisposables.add(vscode.languages.registerHoverProvider(documentSelector, new HoverProvider(server, languageMiddlewareFeature)));
         localDisposables.add(vscode.languages.registerRenameProvider(documentSelector, new RenameProvider(server, languageMiddlewareFeature)));
         if (options.useFormatting) {
-            localDisposables.add(vscode.languages.registerDocumentRangeFormattingEditProvider(documentSelector, new FormatProvider(server, languageMiddlewareFeature)));
-            localDisposables.add(vscode.languages.registerOnTypeFormattingEditProvider(documentSelector, new FormatProvider(server, languageMiddlewareFeature), '}', '/', '\n', ';'));
+            localDisposables.add(vscode.languages.registerDocumentRangeFormatProvider(documentSelector, new FormatProvider(server, languageMiddlewareFeature)));
+            localDisposables.add(vscode.languages.registerOnTypeFormattingEditProvider(documentSelector, new FormatProvider(server, languageMiddlewareFeature), ['}', '/', '\n', ';']));
         }
-        localDisposables.add(vscode.languages.registerCompletionItemProvider(documentSelector, completionProvider, '.', ' '));
+        localDisposables.add(vscode.languages.registerCompletionItemProvider("OmniSharp", "OS", documentSelector, completionProvider, ['.', ' ']));
         localDisposables.add(vscode.commands.registerCommand(CompletionAfterInsertCommand, async (item) => completionProvider.afterInsert(item)));
         localDisposables.add(vscode.languages.registerWorkspaceSymbolProvider(new WorkspaceSymbolProvider(server, optionProvider, languageMiddlewareFeature)));
-        localDisposables.add(vscode.languages.registerSignatureHelpProvider(documentSelector, new SignatureHelpProvider(server, languageMiddlewareFeature), '(', ','));
+        localDisposables.add(vscode.languages.registerSignatureHelpProvider(documentSelector, new SignatureHelpProvider(server, languageMiddlewareFeature), ['(', ',']));
         // Since the CodeActionProvider registers its own commands, we must instantiate it and add it to the localDisposables
         // so that it will be cleaned up if OmniSharp is restarted.
         const codeActionProvider = new CodeActionProvider(server, optionProvider, languageMiddlewareFeature);
         localDisposables.add(codeActionProvider);
-        localDisposables.add(vscode.languages.registerCodeActionsProvider(documentSelector, codeActionProvider));
+        // @ts-ignore
+        localDisposables.add(vscode.languages.registerCodeActionProvider(documentSelector, codeActionProvider));
         // Since the FixAllProviders registers its own commands, we must instantiate it and add it to the localDisposables
         // so that it will be cleaned up if OmniSharp is restarted.
         const fixAllProvider = new FixAllProvider(server, languageMiddlewareFeature);
         localDisposables.add(fixAllProvider);
-        localDisposables.add(vscode.languages.registerCodeActionsProvider(documentSelector, fixAllProvider, FixAllProvider.metadata));
+        // @ts-ignore
+        localDisposables.add(vscode.languages.registerCodeActionProvider(documentSelector, fixAllProvider));
         localDisposables.add(reportDiagnostics(server, advisor, languageMiddlewareFeature));
         localDisposables.add(forwardChanges(server));
         localDisposables.add(trackVirtualDocuments(server, eventStream));
@@ -134,17 +132,6 @@ export async function activate(context: vscode.ExtensionContext, packageJSON: an
     }));
 
     disposables.add(registerCommands(context, server, platformInfo, eventStream, optionProvider, omnisharpMonoResolver, packageJSON, extensionPath));
-
-    if (!context.workspaceState.get<boolean>('assetPromptDisabled')) {
-        disposables.add(server.onServerStart(() => {
-            // Update or add tasks.json and launch.json
-            addAssetsIfNecessary(server).then(result => {
-                if (result === AddAssetResult.Disable) {
-                    context.workspaceState.update('assetPromptDisabled', true);
-                }
-            });
-        }));
-    }
 
     // After server is started (and projects are loaded), check to see if there are
     // any project.json projects if the suppress option is not set. If so, notify the user about migration.
@@ -208,9 +195,6 @@ export async function activate(context: vscode.ExtensionContext, packageJSON: an
         advisor.dispose();
         server.stop();
     }));
-
-    // Register ConfigurationProvider
-    disposables.add(vscode.debug.registerDebugConfigurationProvider('coreclr', new CSharpConfigurationProvider(server)));
 
     context.subscriptions.push(disposables);
 

@@ -3,11 +3,11 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { CompletionItemProvider, TextDocument, Position, CompletionContext, CompletionList, CompletionItem, MarkdownString, TextEdit, Range, SnippetString, window, Selection, WorkspaceEdit, workspace, CompletionItemLabel } from "vscode";
+import { CompletionItemProvider, TextDocument, Position, CompletionContext, CompletionList, CompletionItem, MarkupContent, TextEdit, Range, window, WorkspaceEdit, workspace, CompletionItemKind, MarkupKind } from "coc.nvim";
 import AbstractProvider from "./abstractProvider";
 import * as protocol from "../omnisharp/protocol";
 import * as serverUtils from '../omnisharp/utils';
-import { CancellationToken, CompletionTriggerKind as LspCompletionTriggerKind, InsertTextFormat } from "vscode-languageserver-protocol";
+import { CancellationToken, CompletionTriggerKind as LspCompletionTriggerKind, InsertTextFormat } from "coc.nvim";
 import { createRequest } from "../omnisharp/typeConversion";
 import { LanguageMiddlewareFeature } from "../omnisharp/LanguageMiddlewareFeature";
 import { OmniSharpServer } from "../omnisharp/server";
@@ -57,7 +57,7 @@ export default class OmnisharpCompletionProvider extends AbstractProvider implem
                 //   }
                 // }
                 // ```
-                mappedItems = mappedItems.filter(item => (<CompletionItemLabel>item.label).label !== "await" || !item.additionalTextEdits);
+                mappedItems = mappedItems.filter(item => item.label !== "await" || !item.additionalTextEdits);
             }
 
             let lastCompletions = new Map();
@@ -68,7 +68,7 @@ export default class OmnisharpCompletionProvider extends AbstractProvider implem
 
             this.#lastCompletions = lastCompletions;
 
-            return { items: mappedItems };
+            return { items: mappedItems, isIncomplete: false };
         }
         catch (error) {
             return;
@@ -105,12 +105,21 @@ export default class OmnisharpCompletionProvider extends AbstractProvider implem
                 return;
             }
 
-            let edit = new WorkspaceEdit();
-            edit.set(uri, response.Changes.map(change => ({
+            const changes = response.Changes.map(change => ({
                 newText: change.NewText,
-                range: new Range(new Position(change.StartLine, change.StartColumn),
-                    new Position(change.EndLine, change.EndColumn))
-            })));
+                range: {
+                    start: {
+                        line: change.StartLine,
+                        character: change.StartColumn,
+                    },
+                    end: {
+                        line: change.EndLine,
+                        character: change.EndColumn,
+                    },
+                }
+            }));
+            let edit: WorkspaceEdit = { changes: {}  };
+            edit.changes[uri] = changes;
 
             edit = await this._languageMiddlewareFeature.remap("remapWorkspaceEdit", edit, CancellationToken.None);
 
@@ -118,12 +127,6 @@ export default class OmnisharpCompletionProvider extends AbstractProvider implem
             if (!applied) {
                 return;
             }
-
-            const responseLine = response.Line;
-            const responseColumn = response.Column;
-
-            const finalPosition = new Position(responseLine, responseColumn);
-            window.activeTextEditor.selections = [new Selection(finalPosition, finalPosition)];
         }
         catch (error) {
             return;
@@ -131,40 +134,42 @@ export default class OmnisharpCompletionProvider extends AbstractProvider implem
     }
 
     private _convertToVscodeCompletionItem(omnisharpCompletion: protocol.OmnisharpCompletionItem): CompletionItem {
-        const docs: MarkdownString | undefined = omnisharpCompletion.Documentation ? new MarkdownString(omnisharpCompletion.Documentation, false) : undefined;
+        const docs: MarkupContent | undefined = omnisharpCompletion.Documentation ? { kind: MarkupKind.Markdown, value: omnisharpCompletion.Documentation } : undefined;
 
         const mapRange = function (edit: protocol.LinePositionSpanTextChange): Range {
-            const newStart = new Position(edit.StartLine, edit.StartColumn);
-            const newEnd = new Position(edit.EndLine, edit.EndColumn);
-            return new Range(newStart, newEnd);
+            const newStart = { line: edit.StartLine, character: edit.StartColumn };
+            const newEnd = { line: edit.EndLine, character: edit.EndColumn };
+            return { start: newStart, end: newEnd };
         };
 
         const mapTextEdit = function (edit: protocol.LinePositionSpanTextChange): TextEdit {
-            return new TextEdit(mapRange(edit), edit.NewText);
+            return { range: mapRange(edit), newText: edit.NewText };
         };
 
         const additionalTextEdits = omnisharpCompletion.AdditionalTextEdits?.map(mapTextEdit);
 
         const newText = omnisharpCompletion.TextEdit?.NewText ?? omnisharpCompletion.InsertText;
-        const insertText = omnisharpCompletion.InsertTextFormat === InsertTextFormat.Snippet
-            ? new SnippetString(newText)
-            : newText;
+        const insertText = newText;
+        const insertTextFormat = omnisharpCompletion.InsertTextFormat === InsertTextFormat.Snippet
+            ? InsertTextFormat.Snippet
+            : InsertTextFormat.PlainText;
 
         const insertRange = omnisharpCompletion.TextEdit ? mapRange(omnisharpCompletion.TextEdit) : undefined;
 
         return {
-            label: { label: omnisharpCompletion.Label, description: omnisharpCompletion.Detail },
-            kind: omnisharpCompletion.Kind - 1,
+            label: omnisharpCompletion.Label,
+            kind: (omnisharpCompletion.Kind - 1) as CompletionItemKind,
             documentation: docs,
             commitCharacters: omnisharpCompletion.CommitCharacters,
             preselect: omnisharpCompletion.Preselect,
             filterText: omnisharpCompletion.FilterText,
-            insertText: insertText,
-            range: insertRange,
-            tags: omnisharpCompletion.Tags,
+            insertTextFormat,
+            textEdit: {
+                range: insertRange,
+                newText: insertText,
+            },
             sortText: omnisharpCompletion.SortText,
             additionalTextEdits: additionalTextEdits,
-            keepWhitespace: true,
             command: omnisharpCompletion.HasAfterInsertStep ? { command: CompletionAfterInsertCommand, title: "", arguments: [omnisharpCompletion] } : undefined
         };
     }

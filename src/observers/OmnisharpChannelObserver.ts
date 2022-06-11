@@ -3,13 +3,13 @@
 *  Licensed under the MIT License. See License.txt in the project root for license information.
 *--------------------------------------------------------------------------------------------*/
 
+import * as coc from 'coc.nvim';
 import { BaseChannelObserver } from "./BaseChannelObserver";
-import { vscode, OutputChannel } from '../vscodeAdapter';
 import { BaseEvent, OmnisharpServerOnStdErr } from '../omnisharp/loggingEvents';
 import { EventType } from "../omnisharp/EventType";
 
 export class OmnisharpChannelObserver extends BaseChannelObserver {
-    constructor(channel: OutputChannel, private vscode: vscode) {
+    constructor(channel: coc.OutputChannel) {
         super(channel);
     }
 
@@ -29,7 +29,7 @@ export class OmnisharpChannelObserver extends BaseChannelObserver {
     }
 
     private async handleOmnisharpServerOnStdErr(event: OmnisharpServerOnStdErr) {
-        let csharpConfig = this.vscode.workspace.getConfiguration('csharp');
+        let csharpConfig = coc.workspace.getConfiguration('csharp');
         if (csharpConfig.get<boolean>('showOmnisharpLogOnError')) {
             this.showChannel(true);
         }

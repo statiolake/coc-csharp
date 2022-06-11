@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import * as serverUtils from '../omnisharp/utils';
-import * as vscode from 'vscode';
+import * as coc from 'coc.nvim';
 import AbstractProvider from './abstractProvider';
 import { OmniSharpServer } from '../omnisharp/server';
 import { LanguageMiddlewareFeature } from '../omnisharp/LanguageMiddlewareFeature';
@@ -12,26 +12,26 @@ import { InlayHint, InlayHintRequest, InlayHintResolve as InlayHintResolveReques
 import { fromVSCodeRange, toVSCodePosition, toVSCodeTextEdit } from '../omnisharp/typeConversion';
 import { isVirtualCSharpDocument } from './virtualDocumentTracker';
 
-export default class CSharpInlayHintProvider extends AbstractProvider implements vscode.InlayHintsProvider {
-    private readonly _onDidChangeInlayHints = new vscode.EventEmitter<void>();
+export default class CSharpInlayHintProvider extends AbstractProvider implements coc.InlayHintsProvider {
+    private readonly _onDidChangeInlayHints = new coc.Emitter<void>();
     public readonly onDidChangeInlayHints = this._onDidChangeInlayHints.event;
 
-    private readonly _hintsMap = new Map<vscode.InlayHint, InlayHint>();
+    private readonly _hintsMap = new Map<coc.InlayHint, InlayHint>();
 
     constructor(server: OmniSharpServer, languageMiddlewareFeature: LanguageMiddlewareFeature) {
         super(server, languageMiddlewareFeature);
         this.addDisposables(new CompositeDisposable(
             this._onDidChangeInlayHints,
-            vscode.workspace.onDidChangeTextDocument(e => {
-                if (e.document.languageId === 'csharp') {
+            coc.workspace.onDidChangeTextDocument(e => {
+                if (coc.workspace.getDocument(e.textDocument.uri).languageId === 'csharp') {
                     this._onDidChangeInlayHints.fire();
                 }
             })));
     }
 
-    async provideInlayHints(document: vscode.TextDocument, range: vscode.Range, token: vscode.CancellationToken): Promise<vscode.InlayHint[]> {
+    async provideInlayHints(document: coc.TextDocument, range: coc.Range, token: coc.CancellationToken): Promise<coc.InlayHint[]> {
         // Exclude documents from other schemes, such as those in the diff view.
-        if (document.uri.scheme !== "file") {
+        if (coc.Uri.parse(document.uri).scheme !== "file") {
             return [];
         }
 
@@ -41,7 +41,7 @@ export default class CSharpInlayHintProvider extends AbstractProvider implements
 
         const request: InlayHintRequest = {
             Location: {
-                FileName: document.fileName,
+                FileName: coc.Uri.parse(document.uri).fsPath,
                 Range: fromVSCodeRange(range)
             }
         };
@@ -49,7 +49,7 @@ export default class CSharpInlayHintProvider extends AbstractProvider implements
         try {
             const hints = await serverUtils.getInlayHints(this._server, request, token);
 
-            return hints.InlayHints.map((inlayHint): vscode.InlayHint => {
+            return hints.InlayHints.map((inlayHint): coc.InlayHint => {
                 const mappedHint = this.toVSCodeHint(inlayHint);
                 this._hintsMap.set(mappedHint, inlayHint);
                 return mappedHint;
@@ -59,7 +59,7 @@ export default class CSharpInlayHintProvider extends AbstractProvider implements
         }
     }
 
-    async resolveInlayHint?(hint: vscode.InlayHint, token: vscode.CancellationToken): Promise<vscode.InlayHint> {
+    async resolveInlayHint?(hint: coc.InlayHint, token: coc.CancellationToken): Promise<coc.InlayHint> {
         if (!this._hintsMap.has(hint)) {
             return Promise.reject(`Outdated inlay hint was requested to be resolved, aborting.`);
         }
@@ -74,15 +74,17 @@ export default class CSharpInlayHintProvider extends AbstractProvider implements
         }
     }
 
-    private toVSCodeHint(inlayHint: InlayHint): vscode.InlayHint {
+    private toVSCodeHint(inlayHint: InlayHint): coc.InlayHint {
         return {
             label: inlayHint.Label,
             position: toVSCodePosition(inlayHint.Position),
-            tooltip: new vscode.MarkdownString(inlayHint.Tooltip ?? ""),
-            textEdits: toVSCodeTextEdits(inlayHint.TextEdits),
+            tooltip: {
+                kind: coc.MarkupKind.Markdown,
+                value: inlayHint.Tooltip ?? ""
+            }
         };
 
-        function toVSCodeTextEdits(textEdits: LinePositionSpanTextChange[]): vscode.TextEdit[] {
+        function toVSCodeTextEdits(textEdits: LinePositionSpanTextChange[]): coc.TextEdit[] {
             return textEdits ? textEdits.map(toVSCodeTextEdit) : undefined;
         }
     }

@@ -7,7 +7,7 @@ import AbstractSupport from './abstractProvider';
 import { FindImplementationsRequest } from '../omnisharp/protocol';
 import * as serverUtils from '../omnisharp/utils';
 import { createRequest, toLocation } from '../omnisharp/typeConversion';
-import { TextDocument, Position, CancellationToken, ImplementationProvider, Definition } from 'vscode';
+import { TextDocument, Position, CancellationToken, ImplementationProvider, Definition } from 'coc.nvim';
 
 export default class CSharpImplementationProvider extends AbstractSupport implements ImplementationProvider {
     public async provideImplementation(document: TextDocument, position: Position, token: CancellationToken): Promise<Definition> {

@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as path from 'path';
-import { CompletionTriggerKind, CompletionItemKind, CompletionItemTag, InsertTextFormat } from 'vscode-languageserver-protocol';
+import { CompletionTriggerKind, CompletionItemKind, InsertTextFormat } from 'coc.nvim';
 
 export module Requests {
     export const AddToProject = '/addtoproject';
@@ -538,7 +538,6 @@ export interface CompletionAfterInsertResponse {
 export interface OmnisharpCompletionItem {
     Label: string;
     Kind: CompletionItemKind;
-    Tags?: CompletionItemTag[];
     Detail?: string;
     Documentation?: string;
     Preselect: boolean;

@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { vscode, WorkspaceConfiguration } from '../vscodeAdapter';
+import * as coc from 'coc.nvim';
 
 export class Options {
     constructor(
@@ -59,15 +59,15 @@ export class Options {
         public testRunSettings: string) {
     }
 
-    public static Read(vscode: vscode): Options {
+    public static Read(): Options {
         // Extra effort is taken below to ensure that legacy versions of options
         // are supported below. In particular, these are:
         //
         // - "csharp.omnisharp" -> "omnisharp.path"
 
-        const omnisharpConfig = vscode.workspace.getConfiguration('omnisharp');
-        const csharpConfig = vscode.workspace.getConfiguration('csharp');
-        const razorConfig = vscode.workspace.getConfiguration('razor');
+        const omnisharpConfig = coc.workspace.getConfiguration('omnisharp');
+        const csharpConfig = coc.workspace.getConfiguration('csharp');
+        const razorConfig = coc.workspace.getConfiguration('razor');
 
         const path = Options.readPathOption(csharpConfig, omnisharpConfig);
         const useModernNet = omnisharpConfig.get<boolean>("useModernNet", true);
@@ -146,7 +146,7 @@ export class Options {
 
         const testRunSettings = omnisharpConfig.get<string>('testRunSettings', '');
 
-        const excludePaths = this.getExcludedPaths(vscode);
+        const excludePaths = this.getExcludedPaths();
 
         return new Options(
             path,
@@ -202,8 +202,8 @@ export class Options {
         );
     }
 
-    public static getExcludedPaths(vscode: vscode, includeSearchExcludes: boolean = false): string[] {
-        const workspaceConfig = vscode.workspace.getConfiguration();
+    public static getExcludedPaths(includeSearchExcludes: boolean = false): string[] {
+        let workspaceConfig = coc.workspace.getConfiguration();
 
         let excludePaths = getExcludes(workspaceConfig, 'files.exclude');
 
@@ -213,7 +213,7 @@ export class Options {
 
         return excludePaths;
 
-        function getExcludes(config: WorkspaceConfiguration, option: string): string[] {
+        function getExcludes(config: coc.WorkspaceConfiguration, option: string): string[] {
             const optionValue = config.get<{ [i: string]: boolean }>(option, {});
             return Object.entries(optionValue)
                 .filter(([key, value]) => value)
@@ -221,7 +221,7 @@ export class Options {
         }
     }
 
-    private static readPathOption(csharpConfig: WorkspaceConfiguration, omnisharpConfig: WorkspaceConfiguration): string {
+    private static readPathOption(csharpConfig: coc.WorkspaceConfiguration, omnisharpConfig: coc.WorkspaceConfiguration): string | null {
         if (omnisharpConfig.has('path')) {
             // If 'omnisharp.path' setting was found, use it.
             return omnisharpConfig.get<string>('path', '');

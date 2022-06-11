@@ -7,19 +7,18 @@ import * as fs from 'fs-extra';
 import { OmniSharpServer } from './server';
 import * as path from 'path';
 import * as protocol from './protocol';
-import * as vscode from 'vscode';
+import * as coc from 'coc.nvim';
 import { MSBuildProject } from './protocol';
-import { CancellationToken } from 'vscode-languageserver-protocol';
 
-export async function codeCheck(server: OmniSharpServer, request: protocol.Request, token: vscode.CancellationToken) {
+export async function codeCheck(server: OmniSharpServer, request: protocol.Request, token: coc.CancellationToken) {
     return server.makeRequest<protocol.QuickFixResponse>(protocol.Requests.CodeCheck, request, token);
 }
 
-export async function blockStructure(server: OmniSharpServer, request: protocol.V2.BlockStructureRequest, token: vscode.CancellationToken) {
+export async function blockStructure(server: OmniSharpServer, request: protocol.V2.BlockStructureRequest, token: coc.CancellationToken) {
     return server.makeRequest<protocol.V2.BlockStructureResponse>(protocol.V2.Requests.BlockStructure, request, token);
 }
 
-export async function codeStructure(server: OmniSharpServer, request: protocol.V2.Structure.CodeStructureRequest, token: vscode.CancellationToken) {
+export async function codeStructure(server: OmniSharpServer, request: protocol.V2.Structure.CodeStructureRequest, token: coc.CancellationToken) {
     return server.makeRequest<protocol.V2.Structure.CodeStructureResponse>(protocol.V2.Requests.CodeStructure, request, token);
 }
 
@@ -31,11 +30,11 @@ export async function filesChanged(server: OmniSharpServer, requests: protocol.R
     return server.makeRequest<void>(protocol.Requests.FilesChanged, requests);
 }
 
-export async function findImplementations(server: OmniSharpServer, request: protocol.FindImplementationsRequest, token: vscode.CancellationToken) {
+export async function findImplementations(server: OmniSharpServer, request: protocol.FindImplementationsRequest, token: coc.CancellationToken) {
     return server.makeRequest<protocol.QuickFixResponse>(protocol.Requests.FindImplementations, request);
 }
 
-export async function findSymbols(server: OmniSharpServer, request: protocol.FindSymbolsRequest, token: vscode.CancellationToken) {
+export async function findSymbols(server: OmniSharpServer, request: protocol.FindSymbolsRequest, token: coc.CancellationToken) {
     return server.makeRequest<protocol.FindSymbolsResponse>(protocol.Requests.FindSymbols, request, token);
 }
 
@@ -47,31 +46,31 @@ export async function getFixAll(server: OmniSharpServer, request: protocol.GetFi
     return server.makeRequest<protocol.GetFixAllResponse>(protocol.Requests.GetFixAll, request);
 }
 
-export async function findUsages(server: OmniSharpServer, request: protocol.FindUsagesRequest, token: vscode.CancellationToken) {
+export async function findUsages(server: OmniSharpServer, request: protocol.FindUsagesRequest, token: coc.CancellationToken) {
     return server.makeRequest<protocol.QuickFixResponse>(protocol.Requests.FindUsages, request, token);
 }
 
-export async function formatAfterKeystroke(server: OmniSharpServer, request: protocol.FormatAfterKeystrokeRequest, token: vscode.CancellationToken) {
+export async function formatAfterKeystroke(server: OmniSharpServer, request: protocol.FormatAfterKeystrokeRequest, token: coc.CancellationToken) {
     return server.makeRequest<protocol.FormatRangeResponse>(protocol.Requests.FormatAfterKeystroke, request, token);
 }
 
-export async function formatRange(server: OmniSharpServer, request: protocol.FormatRangeRequest, token: vscode.CancellationToken) {
+export async function formatRange(server: OmniSharpServer, request: protocol.FormatRangeRequest, token: coc.CancellationToken) {
     return server.makeRequest<protocol.FormatRangeResponse>(protocol.Requests.FormatRange, request, token);
 }
 
-export async function getCodeActions(server: OmniSharpServer, request: protocol.V2.GetCodeActionsRequest, token: vscode.CancellationToken) {
+export async function getCodeActions(server: OmniSharpServer, request: protocol.V2.GetCodeActionsRequest, token: coc.CancellationToken) {
     return server.makeRequest<protocol.V2.GetCodeActionsResponse>(protocol.V2.Requests.GetCodeActions, request, token);
 }
 
-export async function goToDefinition(server: OmniSharpServer, request: protocol.V2.GoToDefinitionRequest, token: vscode.CancellationToken) {
+export async function goToDefinition(server: OmniSharpServer, request: protocol.V2.GoToDefinitionRequest, token: coc.CancellationToken) {
     return server.makeRequest<protocol.V2.GoToDefinitionResponse>(protocol.V2.Requests.GoToDefinition, request, token);
 }
 
-export async function goToTypeDefinition(server: OmniSharpServer, request: protocol.GoToTypeDefinitionRequest, token: vscode.CancellationToken) {
+export async function goToTypeDefinition(server: OmniSharpServer, request: protocol.GoToTypeDefinitionRequest, token: coc.CancellationToken) {
     return server.makeRequest<protocol.GoToTypeDefinitionResponse>(protocol.Requests.GoToTypeDefinition, request, token);
 }
 
-export async function getSourceGeneratedFile(server: OmniSharpServer, request: protocol.SourceGeneratedFileRequest, token: vscode.CancellationToken) {
+export async function getSourceGeneratedFile(server: OmniSharpServer, request: protocol.SourceGeneratedFileRequest, token: coc.CancellationToken) {
     return server.makeRequest<protocol.SourceGeneratedFileResponse>(protocol.Requests.SourceGeneratedFile, request, token);
 }
 
@@ -83,7 +82,7 @@ export async function sourceGeneratedFileClosed(server: OmniSharpServer, request
     return server.makeRequest(protocol.Requests.SourceGeneratedFileClosed, request);
 }
 
-export async function rename(server: OmniSharpServer, request: protocol.RenameRequest, token: vscode.CancellationToken) {
+export async function rename(server: OmniSharpServer, request: protocol.RenameRequest, token: coc.CancellationToken) {
     return server.makeRequest<protocol.RenameResponse>(protocol.Requests.Rename, request, token);
 }
 
@@ -108,7 +107,8 @@ export async function requestWorkspaceInformation(server: OmniSharpServer) {
             blazorWebAssemblyProjectFound = blazorWebAssemblyProjectFound || isProjectBlazorWebAssemblyProject;
         }
 
-        if (blazorWebAssemblyProjectFound && !vscode.extensions.getExtension('ms-dotnettools.blazorwasm-companion')) {
+        // @ts-ignore
+        if (blazorWebAssemblyProjectFound && !coc.extensions.getExtension('ms-dotnettools.blazorwasm-companion')) {
             // No need to await this call, we don't depend on the prompt being shown.
             showBlazorDebuggingExtensionPrompt(server);
         }
@@ -121,11 +121,11 @@ export async function runCodeAction(server: OmniSharpServer, request: protocol.V
     return server.makeRequest<protocol.V2.RunCodeActionResponse>(protocol.V2.Requests.RunCodeAction, request);
 }
 
-export async function signatureHelp(server: OmniSharpServer, request: protocol.Request, token: vscode.CancellationToken) {
+export async function signatureHelp(server: OmniSharpServer, request: protocol.Request, token: coc.CancellationToken) {
     return server.makeRequest<protocol.SignatureHelp>(protocol.Requests.SignatureHelp, request, token);
 }
 
-export async function typeLookup(server: OmniSharpServer, request: protocol.TypeLookupRequest, token: vscode.CancellationToken) {
+export async function typeLookup(server: OmniSharpServer, request: protocol.TypeLookupRequest, token: coc.CancellationToken) {
     return server.makeRequest<protocol.TypeLookupResponse>(protocol.Requests.TypeLookup, request, token);
 }
 
@@ -181,15 +181,15 @@ export async function getSemanticHighlights(server: OmniSharpServer, request: pr
     return server.makeRequest<protocol.V2.SemanticHighlightResponse>(protocol.V2.Requests.Highlight, request);
 }
 
-export async function getQuickInfo(server: OmniSharpServer, request: protocol.QuickInfoRequest, token: CancellationToken) {
+export async function getQuickInfo(server: OmniSharpServer, request: protocol.QuickInfoRequest, token: coc.CancellationToken) {
     return server.makeRequest<protocol.QuickInfoResponse>(protocol.Requests.QuickInfo, request, token);
 }
 
-export async function getCompletion(server: OmniSharpServer, request: protocol.CompletionRequest, context: vscode.CancellationToken) {
+export async function getCompletion(server: OmniSharpServer, request: protocol.CompletionRequest, context: coc.CancellationToken) {
     return server.makeRequest<protocol.CompletionResponse>(protocol.Requests.Completion, request, context);
 }
 
-export async function getCompletionResolve(server: OmniSharpServer, request: protocol.CompletionResolveRequest, context: vscode.CancellationToken) {
+export async function getCompletionResolve(server: OmniSharpServer, request: protocol.CompletionResolveRequest, context: coc.CancellationToken) {
     return server.makeRequest<protocol.CompletionResolveResponse>(protocol.Requests.CompletionResolve, request, context);
 }
 
@@ -209,11 +209,11 @@ export function isNetCoreProject(project: protocol.MSBuildProject) {
     return project.TargetFrameworks.find(tf => tf.ShortName.startsWith('netcoreapp') || tf.ShortName.startsWith('netstandard')) !== undefined;
 }
 
-export async function getInlayHints(server: OmniSharpServer, request: protocol.InlayHintRequest, context: vscode.CancellationToken) {
+export async function getInlayHints(server: OmniSharpServer, request: protocol.InlayHintRequest, context: coc.CancellationToken) {
     return server.makeRequest<protocol.InlayHintResponse>(protocol.Requests.InlayHint, request, context);
 }
 
-export async function resolveInlayHints(server: OmniSharpServer, request: protocol.InlayHintResolve, context: vscode.CancellationToken) {
+export async function resolveInlayHints(server: OmniSharpServer, request: protocol.InlayHintResolve, context: coc.CancellationToken) {
     return server.makeRequest<protocol.InlayHint>(protocol.Requests.InlayHintResolve, request, context);
 }
 
@@ -275,10 +275,10 @@ async function showBlazorDebuggingExtensionPrompt(server: OmniSharpServer) {
         server.sessionProperties[promptShownKey] = true;
 
         const msg = 'The Blazor WASM Debugging Extension is required to debug Blazor WASM apps in VS Code.';
-        const result = await vscode.window.showInformationMessage(msg, 'Install Extension', 'Close');
+        const result = await coc.window.showInformationMessage(msg, 'Install Extension', 'Close');
         if (result === 'Install Extension') {
-            const uriToOpen = vscode.Uri.parse('vscode:extension/ms-dotnettools.blazorwasm-companion');
-            await vscode.commands.executeCommand('vscode.open', uriToOpen);
+            const uriToOpen = coc.Uri.parse('vscode:extension/ms-dotnettools.blazorwasm-companion');
+            await coc.commands.executeCommand('vscode.open', uriToOpen);
         }
     }
 }

@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { vscode } from "./vscodeAdapter";
+import * as vscode from 'coc.nvim';
 
 export default class NetworkSettings {
     constructor(public readonly proxy: string, public readonly strictSSL: boolean) {
@@ -14,7 +14,7 @@ export interface NetworkSettingsProvider {
     (): NetworkSettings;
 }
 
-export function vscodeNetworkSettingsProvider(vscode: vscode): NetworkSettingsProvider {
+export function vscodeNetworkSettingsProvider(): NetworkSettingsProvider {
     return () => {
         const config = vscode.workspace.getConfiguration();
         const proxy = config.get<string>('http.proxy');

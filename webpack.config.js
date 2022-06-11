@@ -14,11 +14,11 @@ const config = {
         path: path.resolve(__dirname, 'dist'),
         filename: 'extension.js',
         libraryTarget: "commonjs2",
-        devtoolModuleFilenameTemplate: "../[resource-path]",
+        devtoolModuleFilenameTemplate: "../[resource-path]"
     },
     devtool: 'source-map',
     externals: {
-        vscode: "commonjs vscode", // the vscode-module is created on-the-fly and must be excluded. Add other modules that cannot be webpack'ed, 📖 -> https://webpack.js.org/configuration/externals/
+        'coc.nvim': "commonjs coc.nvim",
         'applicationinsights-native-metrics': 'commonjs applicationinsights-native-metrics', // we're not native
         '@opentelemetry/tracing': 'commonjs @opentelemetry/tracing', // optional
     },

@@ -5,7 +5,7 @@
 
 import * as protocol from '../omnisharp/protocol';
 import * as serverUtils from '../omnisharp/utils';
-import * as vscode from 'vscode';
+import * as coc from 'coc.nvim';
 import { toLocation } from '../omnisharp/typeConversion';
 import AbstractProvider from './abstractProvider';
 import { OmniSharpServer } from '../omnisharp/server';
@@ -19,14 +19,23 @@ import SymbolPropertyNames = protocol.V2.SymbolPropertyNames;
 import SymbolRangeNames = protocol.V2.SymbolRangeNames;
 import { LanguageMiddlewareFeature } from '../omnisharp/LanguageMiddlewareFeature';
 
-abstract class OmniSharpCodeLens extends vscode.CodeLens {
+abstract class OmniSharpCodeLens implements coc.CodeLens {
+    public range: coc.Range;
+    public command?: coc.Command;
+
     constructor(
         range: protocol.V2.Range,
         public fileName: string) {
-
-        super(new vscode.Range(
-            range.Start.Line, range.Start.Column, range.End.Line, range.End.Column
-        ));
+        this.range = {
+            start: {
+                line: range.Start.Line,
+                character: range.Start.Column,
+            },
+            end: {
+                line: range.End.Line,
+                character: range.End.Column,
+            },
+        }
     }
 }
 
@@ -77,22 +86,22 @@ class DebugTestsCodeLens extends TestCodeLens {
     }
 }
 
-export default class OmniSharpCodeLensProvider extends AbstractProvider implements vscode.CodeLensProvider {
+export default class OmniSharpCodeLensProvider extends AbstractProvider implements coc.CodeLensProvider {
 
     constructor(server: OmniSharpServer, testManager: TestManager, private optionProvider: OptionProvider, languageMiddlewareFeature: LanguageMiddlewareFeature) {
         super(server, languageMiddlewareFeature);
     }
 
-    async provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): Promise<vscode.CodeLens[]> {
+    async provideCodeLenses(document: coc.TextDocument, token: coc.CancellationToken): Promise<coc.CodeLens[]> {
         const options = this.optionProvider.GetLatestOptions();
         if (!options.showReferencesCodeLens && !options.showTestsCodeLens) {
             return [];
         }
 
         try {
-            const response = await serverUtils.codeStructure(this._server, { FileName: document.fileName }, token);
+            const response = await serverUtils.codeStructure(this._server, { FileName: coc.Uri.parse(document.uri).fsPath }, token);
             if (response && response.Elements) {
-                return createCodeLenses(response.Elements, document.fileName, options);
+                return createCodeLenses(response.Elements, coc.Uri.parse(document.uri).fsPath, options);
             }
         }
         catch (error) { }
@@ -100,7 +109,7 @@ export default class OmniSharpCodeLensProvider extends AbstractProvider implemen
         return [];
     }
 
-    async resolveCodeLens(codeLens: vscode.CodeLens, token: vscode.CancellationToken): Promise<vscode.CodeLens> {
+    async resolveCodeLens(codeLens: coc.CodeLens, token: coc.CancellationToken): Promise<coc.CodeLens> {
         if (codeLens instanceof ReferencesCodeLens) {
             return this.resolveReferencesCodeLens(codeLens, token);
         }
@@ -112,7 +121,7 @@ export default class OmniSharpCodeLensProvider extends AbstractProvider implemen
         }
     }
 
-    private async resolveReferencesCodeLens(codeLens: ReferencesCodeLens, token: vscode.CancellationToken): Promise<vscode.CodeLens> {
+    private async resolveReferencesCodeLens(codeLens: ReferencesCodeLens, token: coc.CancellationToken): Promise<coc.CodeLens> {
         const request: protocol.FindUsagesRequest = {
             FileName: codeLens.fileName,
             Line: codeLens.range.start.line,
@@ -137,7 +146,7 @@ export default class OmniSharpCodeLensProvider extends AbstractProvider implemen
             codeLens.command = {
                 title: count === 1 ? '1 reference' : `${count} references`,
                 command: 'editor.action.showReferences',
-                arguments: [vscode.Uri.file(request.FileName), codeLens.range.start, remappedLocations]
+                arguments: [coc.Uri.file(request.FileName), codeLens.range.start, remappedLocations]
             };
 
             return codeLens;
@@ -147,7 +156,7 @@ export default class OmniSharpCodeLensProvider extends AbstractProvider implemen
         }
     }
 
-    private async resolveTestCodeLens(codeLens: TestCodeLens, singularTitle: string, singularCommandName: string, pluralTitle: string, pluralCommandName: string): Promise<vscode.CodeLens> {
+    private async resolveTestCodeLens(codeLens: TestCodeLens, singularTitle: string, singularCommandName: string, pluralTitle: string, pluralCommandName: string): Promise<coc.CodeLens> {
         if (!codeLens.isTestContainer) {
             // This is just a single test method, not a container.
             codeLens.command = {
@@ -179,8 +188,8 @@ export default class OmniSharpCodeLensProvider extends AbstractProvider implemen
     }
 }
 
-function createCodeLenses(elements: Structure.CodeElement[], fileName: string, options: Options): vscode.CodeLens[] {
-    let results: vscode.CodeLens[] = [];
+function createCodeLenses(elements: Structure.CodeElement[], fileName: string, options: Options): coc.CodeLens[] {
+    let results: coc.CodeLens[] = [];
 
     Structure.walkCodeElements(elements, element => {
         let codeLenses = createCodeLensesForElement(element, fileName, options);
@@ -191,8 +200,8 @@ function createCodeLenses(elements: Structure.CodeElement[], fileName: string, o
     return results;
 }
 
-function createCodeLensesForElement(element: Structure.CodeElement, fileName: string, options: Options): vscode.CodeLens[] {
-    let results: vscode.CodeLens[] = [];
+function createCodeLensesForElement(element: Structure.CodeElement, fileName: string, options: Options): coc.CodeLens[] {
+    let results: coc.CodeLens[] = [];
 
     if (options.showReferencesCodeLens && isValidElementForReferencesCodeLens(element, options)) {
         let range = element.Ranges[SymbolRangeNames.Name];

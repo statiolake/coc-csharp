@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as serverUtils from '../omnisharp/utils';
-import { Event, EventEmitter, TextDocument, TextDocumentContentProvider, TextEditor, Uri, window, workspace } from 'vscode';
+import { Event, Emitter, TextDocument, TextDocumentContentProvider, TextEditor, Uri, window, workspace } from 'coc.nvim';
 import { IDisposable } from '../Disposable';
 import { SourceGeneratedFileInfo, SourceGeneratedFileResponse, UpdateType } from '../omnisharp/protocol';
 import { OmniSharpServer } from '../omnisharp/server';
@@ -16,7 +16,7 @@ export default class SourceGeneratedDocumentProvider implements TextDocumentCont
     private _uriToDocumentInfo: Map<string, SourceGeneratedFileInfo>;
     private _documentClosedSubscription: IDisposable;
     private _visibleTextEditorsChangedSubscription: IDisposable;
-    private _onDidChangeEmitter: EventEmitter<Uri>;
+    private _onDidChangeEmitter: Emitter<Uri>;
     public onDidChange: Event<Uri>;
 
     constructor(private server: OmniSharpServer) {
@@ -24,7 +24,7 @@ export default class SourceGeneratedDocumentProvider implements TextDocumentCont
         this._uriToDocumentInfo = new Map<string, SourceGeneratedFileInfo>();
         this._documentClosedSubscription = workspace.onDidCloseTextDocument(this.onTextDocumentClosed, this);
         this._visibleTextEditorsChangedSubscription = window.onDidChangeVisibleTextEditors(this.onVisibleTextEditorsChanged, this);
-        this._onDidChangeEmitter = new EventEmitter<Uri>();
+        this._onDidChangeEmitter = new Emitter<Uri>();
         this.onDidChange = this._onDidChangeEmitter.event;
     }
 
@@ -62,7 +62,7 @@ export default class SourceGeneratedDocumentProvider implements TextDocumentCont
                             continue;
                     }
 
-                    this._onDidChangeEmitter.fire(documentUri);
+                    this._onDidChangeEmitter.fire(Uri.parse(documentUri));
                 } catch {
                     continue;
                 }

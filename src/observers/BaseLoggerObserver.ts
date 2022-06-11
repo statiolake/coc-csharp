@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as vscode from '../vscodeAdapter';
+import * as vscode from 'coc.nvim';
 import { Logger } from "../logger";
 import { BaseEvent } from '../omnisharp/loggingEvents';
 

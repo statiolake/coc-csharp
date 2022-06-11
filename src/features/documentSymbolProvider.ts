@@ -6,18 +6,18 @@
 import AbstractSupport from './abstractProvider';
 import * as protocol from '../omnisharp/protocol';
 import * as serverUtils from '../omnisharp/utils';
-import * as vscode from 'vscode';
+import * as coc from 'coc.nvim';
 
 import Structure = protocol.V2.Structure;
 import SymbolKinds = protocol.V2.SymbolKinds;
 import SymbolRangeNames = protocol.V2.SymbolRangeNames;
 import { toRange3 } from '../omnisharp/typeConversion';
 
-export default class OmnisharpDocumentSymbolProvider extends AbstractSupport implements vscode.DocumentSymbolProvider {
+export default class OmnisharpDocumentSymbolProvider extends AbstractSupport implements coc.DocumentSymbolProvider {
 
-    async provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken): Promise<vscode.DocumentSymbol[]> {
+    async provideDocumentSymbols(document: coc.TextDocument, token: coc.CancellationToken): Promise<coc.DocumentSymbol[]> {
         try {
-            const response = await serverUtils.codeStructure(this._server, { FileName: document.fileName }, token);
+            const response = await serverUtils.codeStructure(this._server, { FileName: coc.Uri.parse(document.uri).fsPath }, token);
 
             if (response && response.Elements) {
                 return createSymbols(response.Elements);
@@ -31,8 +31,8 @@ export default class OmnisharpDocumentSymbolProvider extends AbstractSupport imp
     }
 }
 
-function createSymbols(elements: Structure.CodeElement[]): vscode.DocumentSymbol[] {
-    let results: vscode.DocumentSymbol[] = [];
+function createSymbols(elements: Structure.CodeElement[]): coc.DocumentSymbol[] {
+    let results: coc.DocumentSymbol[] = [];
 
     elements.forEach(element => {
         let symbol = createSymbolForElement(element);
@@ -46,39 +46,45 @@ function createSymbols(elements: Structure.CodeElement[]): vscode.DocumentSymbol
     return results;
 }
 
-function createSymbolForElement(element: Structure.CodeElement): vscode.DocumentSymbol {
+function createSymbolForElement(element: Structure.CodeElement): coc.DocumentSymbol {
     const fullRange = element.Ranges[SymbolRangeNames.Full];
     const nameRange = element.Ranges[SymbolRangeNames.Name];
 
-    return new vscode.DocumentSymbol(element.DisplayName, /*detail*/ "", toSymbolKind(element.Kind), toRange3(fullRange), toRange3(nameRange));
+    return {
+        name: element.DisplayName,
+        detail: "",
+        kind: toSymbolKind(element.Kind),
+        range: toRange3(fullRange),
+        selectionRange: toRange3(nameRange),
+    };
 }
 
-const kinds: { [kind: string]: vscode.SymbolKind; } = {};
+const kinds: { [kind: string]: coc.SymbolKind; } = {};
 
-kinds[SymbolKinds.Class] = vscode.SymbolKind.Class;
-kinds[SymbolKinds.Delegate] = vscode.SymbolKind.Class;
-kinds[SymbolKinds.Enum] = vscode.SymbolKind.Enum;
-kinds[SymbolKinds.Interface] = vscode.SymbolKind.Interface;
-kinds[SymbolKinds.Struct] = vscode.SymbolKind.Struct;
+kinds[SymbolKinds.Class] = coc.SymbolKind.Class;
+kinds[SymbolKinds.Delegate] = coc.SymbolKind.Class;
+kinds[SymbolKinds.Enum] = coc.SymbolKind.Enum;
+kinds[SymbolKinds.Interface] = coc.SymbolKind.Interface;
+kinds[SymbolKinds.Struct] = coc.SymbolKind.Struct;
 
-kinds[SymbolKinds.Constant] = vscode.SymbolKind.Constant;
-kinds[SymbolKinds.Destructor] = vscode.SymbolKind.Method;
-kinds[SymbolKinds.EnumMember] = vscode.SymbolKind.EnumMember;
-kinds[SymbolKinds.Event] = vscode.SymbolKind.Event;
-kinds[SymbolKinds.Field] = vscode.SymbolKind.Field;
-kinds[SymbolKinds.Indexer] = vscode.SymbolKind.Property;
-kinds[SymbolKinds.Method] = vscode.SymbolKind.Method;
-kinds[SymbolKinds.Operator] = vscode.SymbolKind.Operator;
-kinds[SymbolKinds.Property] = vscode.SymbolKind.Property;
+kinds[SymbolKinds.Constant] = coc.SymbolKind.Constant;
+kinds[SymbolKinds.Destructor] = coc.SymbolKind.Method;
+kinds[SymbolKinds.EnumMember] = coc.SymbolKind.EnumMember;
+kinds[SymbolKinds.Event] = coc.SymbolKind.Event;
+kinds[SymbolKinds.Field] = coc.SymbolKind.Field;
+kinds[SymbolKinds.Indexer] = coc.SymbolKind.Property;
+kinds[SymbolKinds.Method] = coc.SymbolKind.Method;
+kinds[SymbolKinds.Operator] = coc.SymbolKind.Operator;
+kinds[SymbolKinds.Property] = coc.SymbolKind.Property;
 
-kinds[SymbolKinds.Namespace] = vscode.SymbolKind.Namespace;
-kinds[SymbolKinds.Unknown] = vscode.SymbolKind.Class;
+kinds[SymbolKinds.Namespace] = coc.SymbolKind.Namespace;
+kinds[SymbolKinds.Unknown] = coc.SymbolKind.Class;
 
-function toSymbolKind(kind: string): vscode.SymbolKind {
+function toSymbolKind(kind: string): coc.SymbolKind {
     // Note: 'constructor' is a special property name for JavaScript objects.
     // So, we need to handle it specifically.
     if (kind === 'constructor') {
-        return vscode.SymbolKind.Constructor;
+        return coc.SymbolKind.Constructor;
     }
 
     return kinds[kind];

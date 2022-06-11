@@ -8,11 +8,10 @@ import AbstractSupport from './abstractProvider';
 import * as protocol from '../omnisharp/protocol';
 import * as serverUtils from '../omnisharp/utils';
 import { toRange } from '../omnisharp/typeConversion';
-import * as vscode from 'vscode';
+import * as coc from 'coc.nvim';
 import CompositeDisposable from '../CompositeDisposable';
 import { IDisposable } from '../Disposable';
 import { isVirtualCSharpDocument } from './virtualDocumentTracker';
-import { TextDocument } from '../vscodeAdapter';
 import OptionProvider from '../observers/OptionProvider';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
@@ -120,8 +119,8 @@ class DiagnosticsProvider extends AbstractSupport {
 
     private _validationAdvisor: Advisor;
     private _disposable: CompositeDisposable;
-    private _diagnostics: vscode.DiagnosticCollection;
-    private _validateCurrentDocumentPipe = new Subject<vscode.TextDocument>();
+    private _diagnostics: coc.DiagnosticCollection;
+    private _validateCurrentDocumentPipe = new Subject<coc.TextDocument>();
     private _validateAllPipe = new Subject<string>();
     private _analyzersEnabled: boolean;
     private _subscriptions: Subscription[] = [];
@@ -130,10 +129,10 @@ class DiagnosticsProvider extends AbstractSupport {
     constructor(server: OmniSharpServer, validationAdvisor: Advisor, languageMiddlewareFeature: LanguageMiddlewareFeature) {
         super(server, languageMiddlewareFeature);
 
-        this._analyzersEnabled = vscode.workspace.getConfiguration('omnisharp').get('enableRoslynAnalyzers', false);
+        this._analyzersEnabled = coc.workspace.getConfiguration('omnisharp').get('enableRoslynAnalyzers', false);
         this._validationAdvisor = validationAdvisor;
-        this._diagnostics = vscode.languages.createDiagnosticCollection('csharp');
-        this._suppressHiddenDiagnostics = vscode.workspace.getConfiguration('csharp').get('suppressHiddenDiagnostics', true);
+        this._diagnostics = coc.languages.createDiagnosticCollection('csharp');
+        this._suppressHiddenDiagnostics = coc.workspace.getConfiguration('csharp').get('suppressHiddenDiagnostics', true);
 
         this._subscriptions.push(this._validateCurrentDocumentPipe
             .pipe(debounceTime(750))
@@ -155,11 +154,10 @@ class DiagnosticsProvider extends AbstractSupport {
             this._server.onPackageRestore(() => this._validateAllPipe.next("onPackageRestore"), this),
             this._server.onProjectChange(() => this._validateAllPipe.next("onProjectChanged"), this),
             this._server.onProjectDiagnosticStatus(this._onProjectAnalysis, this),
-            vscode.workspace.onDidOpenTextDocument(event => this._onDocumentOpenOrChange(event), this),
-            vscode.workspace.onDidChangeTextDocument(event => this._onDocumentOpenOrChange(event.document), this),
-            vscode.workspace.onDidCloseTextDocument(this._onDocumentClose, this),
-            vscode.window.onDidChangeActiveTextEditor(event => this._onDidChangeActiveTextEditor(event), this),
-            vscode.window.onDidChangeWindowState(event => this._OnDidChangeWindowState(event), this),
+            coc.workspace.onDidOpenTextDocument(event => this._onDocumentOpenOrChange(event), this),
+            coc.workspace.onDidChangeTextDocument(event => this._onDocumentOpenOrChange(coc.workspace.getDocument(event.textDocument.uri).textDocument), this),
+            coc.workspace.onDidCloseTextDocument(this._onDocumentClose, this),
+            coc.window.onDidChangeActiveTextEditor(event => this._onDidChangeActiveTextEditor(event), this),
         );
     }
 
@@ -170,12 +168,12 @@ class DiagnosticsProvider extends AbstractSupport {
         this._disposable.dispose();
     }
 
-    private shouldIgnoreDocument(document: TextDocument) {
+    private shouldIgnoreDocument(document: coc.TextDocument) {
         if (document.languageId !== 'csharp') {
             return true;
         }
 
-        if (document.uri.scheme !== 'file' &&
+        if (coc.Uri.parse(document.uri).scheme !== 'file' &&
             !isVirtualCSharpDocument(document)) {
             return true;
         }
@@ -183,20 +181,14 @@ class DiagnosticsProvider extends AbstractSupport {
         return false;
     }
 
-    private _OnDidChangeWindowState(windowState: vscode.WindowState): void {
-        if (windowState.focused === true) {
-            this._onDidChangeActiveTextEditor(vscode.window.activeTextEditor);
-        }
-    }
-
-    private _onDidChangeActiveTextEditor(textEditor: vscode.TextEditor): void {
+    private _onDidChangeActiveTextEditor(textEditor: coc.TextEditor): void {
         // active text editor can be undefined.
         if (textEditor != undefined && textEditor.document != null) {
-            this._onDocumentOpenOrChange(textEditor.document);
+            this._onDocumentOpenOrChange(textEditor.document.textDocument);
         }
     }
 
-    private _onDocumentOpenOrChange(document: vscode.TextDocument): void {
+    private _onDocumentOpenOrChange(document: coc.TextDocument): void {
         if (this.shouldIgnoreDocument(document)) {
             return;
         }
@@ -217,13 +209,13 @@ class DiagnosticsProvider extends AbstractSupport {
         }
     }
 
-    private _onDocumentClose(document: vscode.TextDocument): void {
+    private _onDocumentClose(document: coc.TextDocument): void {
         if (this._diagnostics.has(document.uri) && !this._validationAdvisor.shouldValidateAll()) {
             this._diagnostics.delete(document.uri);
         }
     }
 
-    private async _validateDocument(document: vscode.TextDocument) {
+    private async _validateDocument(document: coc.TextDocument) {
         if (!this._validationAdvisor.shouldValidateFiles()) {
             return;
         }
@@ -233,9 +225,9 @@ class DiagnosticsProvider extends AbstractSupport {
             return;
         }
 
-        let source = new vscode.CancellationTokenSource();
+        let source = new coc.CancellationTokenSource();
         try {
-            let value = await serverUtils.codeCheck(this._server, { FileName: document.fileName }, source.token);
+            let value = await serverUtils.codeCheck(this._server, { FileName: coc.Uri.parse(document.uri).fsPath }, source.token);
             let quickFixes = value.QuickFixes;
             // Easy case: If there are no diagnostics in the file, we can clear it quickly.
             if (quickFixes.length === 0) {
@@ -259,33 +251,33 @@ class DiagnosticsProvider extends AbstractSupport {
     // On large workspaces (if maxProjectFileCountForDiagnosticAnalysis) is less than workspace size,
     // diagnostic fallback to mode where only open documents are analyzed.
     private async _validateOpenDocuments() {
-        for (let editor of vscode.window.visibleTextEditors) {
+        for (let editor of coc.window.visibleTextEditors) {
             let document = editor.document;
-            if (this.shouldIgnoreDocument(document)) {
+            if (this.shouldIgnoreDocument(document.textDocument)) {
                 continue;
             }
 
-            await this._validateDocument(document);
+            await this._validateDocument(document.textDocument);
         }
     }
 
-    private _mapQuickFixesAsDiagnosticsInFile(quickFixes: protocol.QuickFix[]): { diagnostic: vscode.Diagnostic, fileName: string }[] {
+    private _mapQuickFixesAsDiagnosticsInFile(quickFixes: protocol.QuickFix[]): { diagnostic: coc.Diagnostic, fileName: string }[] {
         return quickFixes
             .map(quickFix => this._asDiagnosticInFileIfAny(quickFix))
             .filter(diagnosticInFile => diagnosticInFile !== undefined);
     }
 
     private async _validateEntireWorkspace() {
-        let value = await serverUtils.codeCheck(this._server, { FileName: null }, new vscode.CancellationTokenSource().token);
+        let value = await serverUtils.codeCheck(this._server, { FileName: null }, new coc.CancellationTokenSource().token);
 
         let quickFixes = value.QuickFixes
             .sort((a, b) => a.FileName.localeCompare(b.FileName));
 
-        let entries: [vscode.Uri, vscode.Diagnostic[]][] = [];
-        let lastEntry: [vscode.Uri, vscode.Diagnostic[]];
+        let entries: [string, coc.Diagnostic[]][] = [];
+        let lastEntry: [string, coc.Diagnostic[]];
 
         for (let diagnosticInFile of this._mapQuickFixesAsDiagnosticsInFile(quickFixes)) {
-            let uri = vscode.Uri.file(diagnosticInFile.fileName);
+            let uri = coc.Uri.file(diagnosticInFile.fileName);
 
             if (lastEntry && lastEntry[0].toString() === uri.toString()) {
                 lastEntry[1].push(diagnosticInFile.diagnostic);
@@ -293,8 +285,8 @@ class DiagnosticsProvider extends AbstractSupport {
                 // We're replacing all diagnostics in this file. Pushing an entry with undefined for
                 // the diagnostics first ensures that the previous diagnostics for this file are
                 // cleared. Otherwise, new entries will be merged with the old ones.
-                entries.push([uri, undefined]);
-                lastEntry = [uri, [diagnosticInFile.diagnostic]];
+                entries.push([uri.toString(), undefined]);
+                lastEntry = [uri.toString(), [diagnosticInFile.diagnostic]];
                 entries.push(lastEntry);
             }
         }
@@ -310,7 +302,7 @@ class DiagnosticsProvider extends AbstractSupport {
         this._diagnostics.set(entries);
     }
 
-    private _asDiagnosticInFileIfAny(quickFix: protocol.QuickFix): { diagnostic: vscode.Diagnostic, fileName: string } {
+    private _asDiagnosticInFileIfAny(quickFix: protocol.QuickFix): { diagnostic: coc.Diagnostic, fileName: string } {
         let display = this._getDiagnosticDisplay(quickFix, this._asDiagnosticSeverity(quickFix));
 
         if (display.severity === "hidden") {
@@ -319,18 +311,22 @@ class DiagnosticsProvider extends AbstractSupport {
 
         let message = `${quickFix.Text} [${quickFix.Projects.map(n => this._asProjectLabel(n)).join(', ')}]`;
 
-        let diagnostic = new vscode.Diagnostic(toRange(quickFix), message, display.severity);
+        let diagnostic: coc.Diagnostic = {
+            range: toRange(quickFix),
+            message,
+            severity: display.severity,
+        };
         diagnostic.source = 'csharp';
         diagnostic.code = quickFix.Id;
 
         if (display.isFadeout) {
-            diagnostic.tags = [vscode.DiagnosticTag.Unnecessary];
+            diagnostic.tags = [coc.DiagnosticTag.Unnecessary];
         }
 
         return { diagnostic: diagnostic, fileName: quickFix.FileName };
     }
 
-    private _getDiagnosticDisplay(quickFix: protocol.QuickFix, severity: vscode.DiagnosticSeverity | "hidden"): { severity: vscode.DiagnosticSeverity | "hidden", isFadeout: boolean } {
+    private _getDiagnosticDisplay(quickFix: protocol.QuickFix, severity: coc.DiagnosticSeverity | "hidden"): { severity: coc.DiagnosticSeverity | "hidden", isFadeout: boolean } {
         // These hard coded values bring the goodness of fading even when analyzers are disabled.
         let isFadeout = (quickFix.Tags && !!quickFix.Tags.find(x => x.toLowerCase() == 'unnecessary'))
             || quickFix.Id == "CS0162"  // CS0162: Unreachable code
@@ -341,25 +337,25 @@ class DiagnosticsProvider extends AbstractSupport {
             // Theres no such thing as hidden severity in VSCode,
             // however roslyn uses commonly analyzer with hidden to fade out things.
             // Without this any of those doesn't fade anything in vscode.
-            return { severity: vscode.DiagnosticSeverity.Hint, isFadeout };
+            return { severity: coc.DiagnosticSeverity.Hint, isFadeout };
         }
 
         return { severity: severity, isFadeout };
     }
 
-    private _asDiagnosticSeverity(quickFix: protocol.QuickFix): vscode.DiagnosticSeverity | "hidden" {
+    private _asDiagnosticSeverity(quickFix: protocol.QuickFix): coc.DiagnosticSeverity | "hidden" {
         switch (quickFix.LogLevel.toLowerCase()) {
             case 'error':
-                return vscode.DiagnosticSeverity.Error;
+                return coc.DiagnosticSeverity.Error;
             case 'warning':
-                return vscode.DiagnosticSeverity.Warning;
+                return coc.DiagnosticSeverity.Warning;
             case 'info':
-                return vscode.DiagnosticSeverity.Information;
+                return coc.DiagnosticSeverity.Information;
             case 'hidden':
                 if (this._suppressHiddenDiagnostics) {
                     return "hidden";
                 }
-                return vscode.DiagnosticSeverity.Hint;
+                return coc.DiagnosticSeverity.Hint;
             default:
                 return "hidden";
         }

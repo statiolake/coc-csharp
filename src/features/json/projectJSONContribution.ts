@@ -3,9 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as nls from 'vscode-nls';
-
-import { CompletionItem, CompletionItemKind, DocumentSelector, MarkedString } from 'vscode';
+import { CompletionItem, CompletionItemKind, DocumentSelector, MarkupContent, MarkupKind, Thenable } from 'coc.nvim';
 import { IJSONContribution, ISuggestionsCollector } from './jsonContributions';
 import { XHRRequest, XHRResponse, getErrorStatusDescription } from 'request-light';
 
@@ -14,8 +12,6 @@ import NuGetIndexResponse from './NuGetIndexResponse';
 import NuGetSearchAutocompleteServiceResponse from './NuGetSearchAutocompleteServiceResponse';
 import NuGetFlatContainerPackageResponse from './NuGetFlatContainerPackageResponse';
 import NuGetSearchQueryServiceResponse from './NuGetSearchQueryServiceResponse';
-
-const localize = nls.loadMessageBundle();
 
 const FEED_INDEX_URL = 'https://api.nuget.org/v3/index.json';
 const LIMIT = 30;
@@ -62,7 +58,7 @@ export class ProjectJSONContribution implements IJSONContribution {
         return this.getNugetIndex().then(services => {
             let serviceURL = services[serviceType];
             if (!serviceURL) {
-                return Promise.reject<string>(localize('json.nugget.error.missingservice', 'NuGet index document is missing service {0}', serviceType));
+                return Promise.reject<string>(`NuGet index document is missing service ${serviceType}`);
             }
             return serviceURL;
         });
@@ -76,12 +72,12 @@ export class ProjectJSONContribution implements IJSONContribution {
                 try {
                     return <T>JSON.parse(success.responseText);
                 } catch (e) {
-                    return Promise.reject<T>(localize('json.nugget.error.invalidformat', '{0} is not a valid JSON document', url));
+                    return Promise.reject<T>(`${url} is not a valid JSON document`);
                 }
             }
-            return Promise.reject<T>(localize('json.nugget.error.indexaccess', 'Request to {0} failed: {1}', url, success.responseText));
+            return Promise.reject<T>(`Request to ${url} failed: ${success.responseText}`);
         }, async (error: XHRResponse) => {
-            return Promise.reject<T>(localize('json.nugget.error.access', 'Request to {0} failed: {1}', url, getErrorStatusDescription(error.status)));
+            return Promise.reject<T>(`Request to ${url} failed: ${getErrorStatusDescription(error.status)}`);
         });
     }
 
@@ -113,11 +109,12 @@ export class ProjectJSONContribution implements IJSONContribution {
                                     insertText += ',';
                                 }
                             }
-                            let proposal = new CompletionItem(name);
-                            proposal.kind = CompletionItemKind.Property;
-                            proposal.insertText = insertText;
-                            proposal.filterText = JSON.stringify(name);
-                            result.add(proposal);
+                            result.add({
+                                label: name,
+                                kind: CompletionItemKind.Property,
+                                insertText: insertText,
+                                filterText: JSON.stringify(name),
+                            });
                         }
                         if (results.length === LIMIT) {
                             result.setAsIncomplete();
@@ -145,11 +142,12 @@ export class ProjectJSONContribution implements IJSONContribution {
                             for (let i = 0; i < results.length; i++) {
                                 let curr = results[i];
                                 let name = JSON.stringify(curr);
-                                let proposal = new CompletionItem(name);
-                                proposal.kind = CompletionItemKind.Class;
-                                proposal.insertText = name;
-                                proposal.documentation = '';
-                                result.add(proposal);
+                                result.add({
+                                    label: name,
+                                    kind: CompletionItemKind.Class,
+                                    insertText: name,
+                                    documentation: '',
+                                });
                             }
                             if (results.length === LIMIT) {
                                 result.setAsIncomplete();
@@ -175,10 +173,11 @@ export class ProjectJSONContribution implements IJSONContribution {
                 'dnxcore50': {}
             }
         };
-        let proposal = new CompletionItem(localize('json.project.default', 'Default project.json'));
-        proposal.kind = CompletionItemKind.Module;
-        proposal.insertText = JSON.stringify(defaultValue, null, '\t');
-        result.add(proposal);
+        result.add({
+            label: 'Default project.json',
+            kind: CompletionItemKind.Module,
+            insertText: JSON.stringify(defaultValue, null, '\t'),
+        });
         return null;
     }
 
@@ -210,7 +209,7 @@ export class ProjectJSONContribution implements IJSONContribution {
                         let res = results[i];
                         if (res.id === pack) {
                             info.description = res.description;
-                            info.version = localize('json.nugget.version.hover', 'Latest version: {0}', res.version);
+                            info.version = `Latest version: ${res.version}`;
                         }
                     }
                     return info;
@@ -225,20 +224,23 @@ export class ProjectJSONContribution implements IJSONContribution {
     }
 
 
-    public getInfoContribution(resource: string, location: Location): Thenable<MarkedString[]> {
+    public getInfoContribution(resource: string, location: Location): Thenable<MarkupContent> {
         if ((location.matches(['dependencies', '*']) || location.matches(['frameworks', '*', 'dependencies', '*']) || location.matches(['frameworks', '*', 'frameworkAssemblies', '*']))) {
             let pack = location.path[location.path.length - 1];
             if (typeof pack === 'string') {
                 return this.getInfo(pack).then(info => {
-                    let htmlContent: MarkedString[] = [];
-                    htmlContent.push(localize('json.nugget.package.hover', '{0}', pack));
+                    const valueLines = [];
+                    valueLines.push(pack.toString());
                     if (info.description) {
-                        htmlContent.push(info.description);
+                        valueLines.push(info.description);
                     }
                     if (info.version) {
-                        htmlContent.push(info.version);
+                        valueLines.push(info.version);
                     }
-                    return htmlContent;
+                    return {
+                        kind: MarkupKind.PlainText,
+                        value: valueLines.join("\n"),
+                    };
                 });
             }
         }

@@ -7,7 +7,7 @@ import AbstractSupport from './abstractProvider';
 import * as protocol from '../omnisharp/protocol';
 import * as serverUtils from '../omnisharp/utils';
 import {createRequest, toLocation} from '../omnisharp/typeConversion';
-import {ReferenceProvider, Location, TextDocument, CancellationToken, Position} from 'vscode';
+import {ReferenceProvider, Location, TextDocument, CancellationToken, Position} from 'coc.nvim';
 
 export default class OmnisharpReferenceProvider extends AbstractSupport implements ReferenceProvider {
 
@@ -21,7 +21,7 @@ export default class OmnisharpReferenceProvider extends AbstractSupport implemen
             let res = await serverUtils.findUsages(this._server, req, token);
             if (res && Array.isArray(res.QuickFixes)) {
                 const references = res.QuickFixes.map(toLocation);
-                
+
                 // Allow language middlewares to re-map its edits if necessary.
                 const result = await this._languageMiddlewareFeature.remap("remapLocations", references, token);
                 return result;

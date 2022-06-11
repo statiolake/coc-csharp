@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Uri, workspace } from 'vscode';
+import { Uri, workspace } from 'coc.nvim';
 import { OmniSharpServer } from '../omnisharp/server';
 import * as serverUtils from '../omnisharp/utils';
 import { FileChangeType } from '../omnisharp/protocol';
@@ -13,9 +13,9 @@ import CompositeDisposable from '../CompositeDisposable';
 function forwardDocumentChanges(server: OmniSharpServer): IDisposable {
 
     return workspace.onDidChangeTextDocument(event => {
-
-        let { document, contentChanges } = event;
-        if (document.isUntitled || document.languageId !== 'csharp' || document.uri.scheme !== 'file' || contentChanges.length === 0) {
+        let { textDocument, contentChanges } = event;
+        const document = workspace.getDocument(textDocument.uri);
+        if (document.languageId !== 'cs' || contentChanges.length === 0) {
             return;
         }
 
@@ -23,7 +23,7 @@ function forwardDocumentChanges(server: OmniSharpServer): IDisposable {
             return;
         }
 
-        serverUtils.updateBuffer(server, { Buffer: document.getText(), FileName: document.fileName }).catch(err => {
+        serverUtils.updateBuffer(server, { Buffer: document.getDocumentContent(), FileName: Uri.parse(textDocument.uri).fsPath }).catch(err => {
             console.error(err);
             return err;
         });

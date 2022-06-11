@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { TextDocument, TextDocumentContentProvider, Uri, workspace } from 'vscode';
+import { TextDocument, TextDocumentContentProvider, Uri, workspace } from 'coc.nvim';
 import { MetadataResponse } from '../omnisharp/protocol';
 import { IDisposable } from '../Disposable';
 

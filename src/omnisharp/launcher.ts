@@ -8,7 +8,7 @@ import { ChildProcess } from 'child_process';
 
 import { PlatformInformation } from '../platform';
 import * as path from 'path';
-import * as vscode from 'vscode';
+import * as coc from 'coc.nvim';
 import { Options } from './options';
 import { LaunchInfo } from './OmnisharpManager';
 import { IHostExecutableResolver } from '../constants/IHostExecutableResolver';
@@ -59,15 +59,15 @@ export const disabledSchemes = new Set([
  * is included if there are any `*.csproj` files present, but a `*.sln` or `*.slnf` file is not found.
  */
 export async function findLaunchTargets(options: Options): Promise<LaunchTarget[]> {
-    if (!vscode.workspace.workspaceFolders) {
+    if (!coc.workspace.workspaceFolders) {
         return Promise.resolve([]);
     }
 
-    const projectFiles = await vscode.workspace.findFiles(
+    const projectFiles = await coc.workspace.findFiles(
         /*include*/ '{**/*.sln,**/*.slnf,**/*.csproj,**/project.json,**/*.csx,**/*.cake}',
         /*exclude*/ '{**/node_modules/**,**/.git/**,**/bower_components/**}');
 
-    const csFiles = await vscode.workspace.findFiles(
+    const csFiles = await coc.workspace.findFiles(
         /*include*/ '{**/*.cs}',
         /*exclude*/ '{**/node_modules/**,**/.git/**,**/bower_components/**}',
         /*maxResults*/ 1);
@@ -75,7 +75,7 @@ export async function findLaunchTargets(options: Options): Promise<LaunchTarget[
     return resourcesToLaunchTargets(projectFiles.concat(csFiles), options.maxProjectResults);
 }
 
-export function resourcesToLaunchTargets(resources: vscode.Uri[], maxProjectResults: number): LaunchTarget[] {
+export function resourcesToLaunchTargets(resources: coc.Uri[], maxProjectResults: number): LaunchTarget[] {
     // The list of launch targets is calculated like so:
     //   * If there are .csproj files, .sln and .slnf files are considered as launch targets.
     //   * Any project.json file is considered a launch target.
@@ -98,42 +98,45 @@ export function resourcesToLaunchTargets(resources: vscode.Uri[], maxProjectResu
         return [vslsTarget];
     }
 
-    let workspaceFolderToUriMap = new Map<number, vscode.Uri[]>();
+    const workspaceFolders = coc.workspace.workspaceFolders.concat();
+    let workspaceFolderToUriMap = new Map<number, coc.Uri[]>();
 
     for (let resource of localResources) {
-        let folder = vscode.workspace.getWorkspaceFolder(resource);
+        let folder = coc.workspace.getWorkspaceFolder(resource.toString());
         if (folder) {
-            let buckets: vscode.Uri[];
+            let buckets: coc.Uri[];
 
-            if (workspaceFolderToUriMap.has(folder.index)) {
-                buckets = workspaceFolderToUriMap.get(folder.index)!; // Ensured valid via has.
+            const folderIndex = workspaceFolders.findIndex(wf => wf.uri == folder.uri);
+            if (!folderIndex) continue;
+            if (workspaceFolderToUriMap.has(folderIndex)) {
+                buckets = workspaceFolderToUriMap.get(folderIndex)!; // Ensured valid via has.
             } else {
                 buckets = [];
-                workspaceFolderToUriMap.set(folder.index, buckets);
+                workspaceFolderToUriMap.set(folderIndex, buckets);
             }
 
             buckets.push(resource);
         }
     }
 
-    return resourcesAndFolderMapToLaunchTargets(resources, vscode.workspace.workspaceFolders.concat(), workspaceFolderToUriMap, maxProjectResults);
+    return resourcesAndFolderMapToLaunchTargets(resources, coc.workspace.workspaceFolders.concat(), workspaceFolderToUriMap, maxProjectResults);
 }
 
-export function resourcesAndFolderMapToLaunchTargets(resources: vscode.Uri[], workspaceFolders: vscode.WorkspaceFolder[], workspaceFolderToUriMap: Map<number, vscode.Uri[]>, maxProjectResults: number): LaunchTarget[] {
+export function resourcesAndFolderMapToLaunchTargets(resources: coc.Uri[], workspaceFolders: coc.WorkspaceFolder[], workspaceFolderToUriMap: Map<number, coc.Uri[]>, maxProjectResults: number): LaunchTarget[] {
     let solutionTargets: LaunchTarget[] = [];
     let projectJsonTargets: LaunchTarget[] = [];
     let projectRootTargets: LaunchTarget[] = [];
     let projectTargets: LaunchTarget[] = [];
     let otherTargets: LaunchTarget[] = [];
 
-    workspaceFolderToUriMap.forEach((resources, folderIndex) => {
+    workspaceFolderToUriMap.forEach((resources, folderUri) => {
         let hasProjectJsonAtRoot = false;
         let hasCSX = false;
         let hasCake = false;
         let hasCs = false;
 
-        let folder = workspaceFolders[folderIndex];
-        let folderPath = folder.uri.fsPath;
+        let folder = workspaceFolders[folderUri];
+        let folderPath = coc.Uri.parse(folder.uri).fsPath;
 
         resources.forEach(resource => {
             // Add .sln and .slnf files
@@ -141,7 +144,7 @@ export function resourcesAndFolderMapToLaunchTargets(resources: vscode.Uri[], wo
                 const dirname = path.dirname(resource.fsPath);
                 solutionTargets.push({
                     label: path.basename(resource.fsPath),
-                    description: vscode.workspace.asRelativePath(dirname),
+                    description: coc.workspace.asRelativePath(dirname),
                     target: resource.fsPath,
                     directory: path.dirname(resource.fsPath),
                     workspaceKind: LaunchTargetKind.Solution
@@ -153,7 +156,7 @@ export function resourcesAndFolderMapToLaunchTargets(resources: vscode.Uri[], wo
                 hasProjectJsonAtRoot = hasProjectJsonAtRoot || dirname === folderPath;
                 projectJsonTargets.push({
                     label: path.basename(resource.fsPath),
-                    description: vscode.workspace.asRelativePath(dirname),
+                    description: coc.workspace.asRelativePath(dirname),
                     target: dirname,
                     directory: dirname,
                     workspaceKind: LaunchTargetKind.ProjectJson
@@ -167,7 +170,7 @@ export function resourcesAndFolderMapToLaunchTargets(resources: vscode.Uri[], wo
                 // is supported.
                 projectTargets.push({
                     label: path.basename(resource.fsPath),
-                    description: vscode.workspace.asRelativePath(dirname),
+                    description: coc.workspace.asRelativePath(dirname),
                     target: dirname,
                     directory: dirname,
                     workspaceKind: LaunchTargetKind.Project
@@ -243,27 +246,27 @@ export function resourcesAndFolderMapToLaunchTargets(resources: vscode.Uri[], wo
     return otherTargets.concat(solutionTargets).concat(projectRootTargets).concat(projectJsonTargets).concat(projectTargets).slice(0, maxProjectResults);
 }
 
-function isCSharpProject(resource: vscode.Uri): boolean {
+function isCSharpProject(resource: coc.Uri): boolean {
     return /\.csproj$/i.test(resource.fsPath);
 }
 
-function isSolution(resource: vscode.Uri): boolean {
+function isSolution(resource: coc.Uri): boolean {
     return /\.slnf?$/i.test(resource.fsPath);
 }
 
-function isProjectJson(resource: vscode.Uri): boolean {
+function isProjectJson(resource: coc.Uri): boolean {
     return /\project.json$/i.test(resource.fsPath);
 }
 
-function isCsx(resource: vscode.Uri): boolean {
+function isCsx(resource: coc.Uri): boolean {
     return /\.csx$/i.test(resource.fsPath);
 }
 
-function isCake(resource: vscode.Uri): boolean {
+function isCake(resource: coc.Uri): boolean {
     return /\.cake$/i.test(resource.fsPath);
 }
 
-function isCs(resource: vscode.Uri): boolean {
+function isCs(resource: coc.Uri): boolean {
     return /\.cs$/i.test(resource.fsPath);
 }
 
@@ -295,8 +298,8 @@ export async function launchOmniSharp(cwd: string, args: string[], launchInfo: L
 
 async function launch(cwd: string, args: string[], launchInfo: LaunchInfo, platformInfo: PlatformInformation, options: Options, monoResolver: IHostExecutableResolver, dotnetResolver: IHostExecutableResolver): Promise<LaunchResult> {
     if (options.useEditorFormattingSettings) {
-        let globalConfig = vscode.workspace.getConfiguration('', null);
-        let csharpConfig = vscode.workspace.getConfiguration('[csharp]', null);
+        let globalConfig = coc.workspace.getConfiguration('', null);
+        let csharpConfig = coc.workspace.getConfiguration('[csharp]', null);
 
         args.push(`formattingOptions:useTabs=${!getConfigurationValue(globalConfig, csharpConfig, 'editor.insertSpaces', true)}`);
         args.push(`formattingOptions:tabSize=${getConfigurationValue(globalConfig, csharpConfig, 'editor.tabSize', 4)}`);
@@ -314,7 +317,7 @@ async function launch(cwd: string, args: string[], launchInfo: LaunchInfo, platf
     return await launchNix(launchInfo, cwd, args, options, monoResolver);
 }
 
-function getConfigurationValue(globalConfig: vscode.WorkspaceConfiguration, csharpConfig: vscode.WorkspaceConfiguration,
+function getConfigurationValue(globalConfig: coc.WorkspaceConfiguration, csharpConfig: coc.WorkspaceConfiguration,
     configurationPath: string, defaultValue: any): any {
 
     if (csharpConfig[configurationPath] != undefined) {

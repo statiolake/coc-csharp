@@ -9,7 +9,7 @@ import OptionProvider from '../observers/OptionProvider';
 import * as protocol from '../omnisharp/protocol';
 import * as serverUtils from '../omnisharp/utils';
 import { toRange } from '../omnisharp/typeConversion';
-import { CancellationToken, Uri, WorkspaceSymbolProvider, SymbolInformation, SymbolKind } from 'vscode';
+import { CancellationToken, Uri, WorkspaceSymbolProvider, SymbolInformation, SymbolKind } from 'coc.nvim';
 import { LanguageMiddlewareFeature } from '../omnisharp/LanguageMiddlewareFeature';
 
 
@@ -41,10 +41,14 @@ export default class OmnisharpWorkspaceSymbolProvider extends AbstractSupport im
     }
 
     private static _asSymbolInformation(symbolInfo: protocol.SymbolLocation): SymbolInformation {
-
-        return new SymbolInformation(symbolInfo.Text, OmnisharpWorkspaceSymbolProvider._toKind(symbolInfo),
-            toRange(symbolInfo),
-            Uri.file(symbolInfo.FileName));
+        return {
+            name: symbolInfo.Text,
+            kind: OmnisharpWorkspaceSymbolProvider._toKind(symbolInfo),
+            location: {
+                uri: Uri.file(symbolInfo.FileName).toString(),
+                range: toRange(symbolInfo),
+            },
+        };
     }
 
     private static _toKind(symbolInfo: protocol.SymbolLocation): SymbolKind {

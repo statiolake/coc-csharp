@@ -5,7 +5,7 @@
 
 import { IDisposable } from "../Disposable";
 import { OmniSharpServer } from "../omnisharp/server";
-import * as vscode from 'vscode';
+import * as coc from 'coc.nvim';
 import CompositeDisposable from "../CompositeDisposable";
 import * as serverUtils from '../omnisharp/utils';
 import { isVirtualCSharpDocument } from "./virtualDocumentTracker";
@@ -16,46 +16,46 @@ export default function fileOpenClose(server: OmniSharpServer): IDisposable {
 
 class FileOpenCloseProvider implements IDisposable {
     private _server: OmniSharpServer;
-    private _diagnostics: vscode.DiagnosticCollection;
+    private _diagnostics: coc.DiagnosticCollection;
     private _disposable: CompositeDisposable;
 
     constructor(server: OmniSharpServer) {
         this._server = server;
-        this._diagnostics = vscode.languages.createDiagnosticCollection('csharp');
+        this._diagnostics = coc.languages.createDiagnosticCollection('csharp');
 
         setTimeout(async () => {
-            for (let editor of vscode.window.visibleTextEditors) {
+            for (let editor of coc.window.visibleTextEditors) {
                 let document = editor.document;
 
-                await this._onDocumentOpen(document);
+                await this._onDocumentOpen(document.textDocument);
             }
         }, 0);
 
         this._disposable = new CompositeDisposable(this._diagnostics,
-            vscode.workspace.onDidOpenTextDocument(this._onDocumentOpen, this),
-            vscode.workspace.onDidCloseTextDocument(this._onDocumentClose, this),
-            vscode.window.onDidChangeActiveTextEditor(this._onActiveTextEditorChange, this)
+            coc.workspace.onDidOpenTextDocument(this._onDocumentOpen, this),
+            coc.workspace.onDidCloseTextDocument(this._onDocumentClose, this),
+            coc.window.onDidChangeActiveTextEditor(this._onActiveTextEditorChange, this)
         );
     }
 
-    private async _onDocumentOpen(e: vscode.TextDocument) {
+    private async _onDocumentOpen(e: coc.TextDocument) {
         if (shouldIgnoreDocument(e)) {
             return;
         }
 
-        await serverUtils.fileOpen(this._server, { FileName: e.fileName });
+        await serverUtils.fileOpen(this._server, { FileName: coc.Uri.parse(e.uri).fsPath });
     }
 
-    private async _onDocumentClose(e: vscode.TextDocument) {
+    private async _onDocumentClose(e: coc.TextDocument) {
         if (shouldIgnoreDocument(e)) {
             return;
         }
 
-        await serverUtils.fileClose(this._server, { FileName: e.fileName });
+        await serverUtils.fileClose(this._server, { FileName: coc.Uri.parse(e.uri).fsPath });
     }
 
-    private async _onActiveTextEditorChange(e: vscode.TextEditor | undefined) {
-        if (e === undefined || shouldIgnoreDocument(e.document)) {
+    private async _onActiveTextEditorChange(e: coc.TextEditor | undefined) {
+        if (e === undefined || shouldIgnoreDocument(e.document.textDocument)) {
             return;
         }
 
@@ -70,18 +70,24 @@ class FileOpenCloseProvider implements IDisposable {
         //
         // Instead we will update the buffer for the current document which causes diagnostics to be
         // recomputed.
-        await serverUtils.updateBuffer(this._server, { FileName: e.document.fileName, Buffer: e.document.getText() });
+        await serverUtils.updateBuffer(
+            this._server,
+            {
+                FileName: coc.Uri.parse(e.document.uri).fsPath,
+                Buffer: e.document.getDocumentContent()
+            }
+        );
     }
 
     dispose = () => this._disposable.dispose();
 }
 
-function shouldIgnoreDocument(document: vscode.TextDocument) {
+function shouldIgnoreDocument(document: coc.TextDocument) {
     if (document.languageId !== 'csharp') {
         return true;
     }
 
-    if (document.uri.scheme !== 'file' &&
+    if (coc.Uri.parse(document.uri).scheme !== 'file' &&
         !isVirtualCSharpDocument(document)) {
         return true;
     }

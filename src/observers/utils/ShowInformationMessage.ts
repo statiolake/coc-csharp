@@ -3,10 +3,10 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { vscode } from "../../vscodeAdapter";
+import * as vscode from 'coc.nvim';
 import MessageItemWithCommand from "./MessageItemWithCommand";
 
-export default async function showInformationMessage(vscode: vscode, message: string, ...items: MessageItemWithCommand[]) {
+export default async function showInformationMessage(message: string, ...items: MessageItemWithCommand[]) {
     try {
         let value = await vscode.window.showInformationMessage<MessageItemWithCommand>(message, ...items);
         if (value && value.command) {

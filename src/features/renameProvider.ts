@@ -7,7 +7,7 @@ import AbstractSupport from './abstractProvider';
 import * as protocol from '../omnisharp/protocol';
 import * as serverUtils from '../omnisharp/utils';
 import { createRequest } from '../omnisharp/typeConversion';
-import { RenameProvider, WorkspaceEdit, TextDocument, Uri, CancellationToken, Position, Range } from 'vscode';
+import { RenameProvider, WorkspaceEdit, TextDocument, Uri, CancellationToken, Position, TextEdit } from 'coc.nvim';
 
 export default class OmnisharpRenameProvider extends AbstractSupport implements RenameProvider {
 
@@ -25,16 +25,27 @@ export default class OmnisharpRenameProvider extends AbstractSupport implements 
                 return undefined;
             }
 
-            const edit = new WorkspaceEdit();
+            const changes: { [uri: string]: TextEdit[] } = {};
             response.Changes.forEach(change => {
                 const uri = Uri.file(change.FileName);
-
+                changes[uri.toString()] = [];
                 change.Changes.forEach(change => {
-                    edit.replace(uri,
-                        new Range(change.StartLine, change.StartColumn, change.EndLine, change.EndColumn),
-                        change.NewText);
+                    changes[uri.toString()].push({
+                        range: {
+                            start: {
+                                line: change.StartLine,
+                                character: change.StartColumn,
+                            },
+                            end: {
+                                line: change.EndLine,
+                                character: change.EndColumn,
+                            },
+                        },
+                        newText: change.NewText,
+                    });
                 });
             });
+            const edit: WorkspaceEdit = { changes };
 
             // Allow language middlewares to re-map its edits if necessary.
             const result = await this._languageMiddlewareFeature.remap("remapWorkspaceEdit", edit, token);

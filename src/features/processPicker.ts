@@ -7,7 +7,7 @@ import * as child_process from 'child_process';
 import * as fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
-import * as vscode from 'vscode';
+import * as vscode from 'coc.nvim';
 
 import { PlatformInformation } from '../platform';
 import { findPowerShell, getExtensionPath } from '../common';
@@ -28,10 +28,8 @@ export class AttachPicker {
         return this.attachItemsProvider.getAttachItems()
             .then(processEntries => {
                 let attachPickOptions: vscode.QuickPickOptions = {
-                    ignoreFocusOut: true,
-                    matchOnDescription: true,
-                    matchOnDetail: true,
-                    placeHolder: "Select the process to attach to"
+                    canPickMany: false,
+                    title: "Select the process to attach to"
                 };
 
                 return vscode.window.showQuickPick(processEntries, attachPickOptions)
@@ -225,10 +223,8 @@ export class RemoteAttachPicker {
                 .then(async pipeCmd => RemoteAttachPicker.getRemoteOSAndProcesses(pipeCmd, pipeTransport.pipeCwd, platformInfo))
                 .then(processes => {
                     let attachPickOptions: vscode.QuickPickOptions = {
-                        ignoreFocusOut: true,
-                        matchOnDescription: true,
-                        matchOnDetail: true,
-                        placeHolder: "Select the process to attach to"
+                        canPickMany: false,
+                        title: "Select the process to attach to"
                     };
                     return vscode.window.showQuickPick(processes, attachPickOptions);
                 });
@@ -272,7 +268,6 @@ export class Process {
         return {
             label: this.name,
             description: this.pid,
-            detail: this.commandLine,
             id: this.pid,
             flags: this.flags
         };

@@ -3,8 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as vscode from 'vscode';
-import { SemanticTokenTypes } from 'vscode-languageserver-protocol';
+import * as coc from 'coc.nvim';
 import * as protocol from '../omnisharp/protocol';
 import * as serverUtils from '../omnisharp/utils';
 import { createRequest, toRange2 } from '../omnisharp/typeConversion';
@@ -159,22 +158,25 @@ enum SemanticHighlightModifier {
     Static
 }
 
-export default class SemanticTokensProvider extends AbstractProvider implements vscode.DocumentSemanticTokensProvider, vscode.DocumentRangeSemanticTokensProvider {
+export default class SemanticTokensProvider extends AbstractProvider implements coc.DocumentSemanticTokensProvider, coc.DocumentRangeSemanticTokensProvider {
 
     constructor(server: OmniSharpServer, private optionProvider: OptionProvider, languageMiddlewareFeature: LanguageMiddlewareFeature) {
         super(server, languageMiddlewareFeature);
     }
 
-    getLegend(): vscode.SemanticTokensLegend {
-        return new vscode.SemanticTokensLegend(tokenTypes, tokenModifiers);
+    getLegend(): coc.SemanticTokensLegend {
+        return {
+            tokenTypes,
+            tokenModifiers,
+        }
     }
 
-    async provideDocumentSemanticTokens(document: vscode.TextDocument, token: vscode.CancellationToken): Promise<vscode.SemanticTokens | null> {
+    async provideDocumentSemanticTokens(document: coc.TextDocument, token: coc.CancellationToken): Promise<coc.SemanticTokens | null> {
 
         return this._provideSemanticTokens(document, null, token);
     }
 
-    async provideDocumentRangeSemanticTokens(document: vscode.TextDocument, range: vscode.Range, token: vscode.CancellationToken): Promise<vscode.SemanticTokens | null> {
+    async provideDocumentRangeSemanticTokens(document: coc.TextDocument, range: coc.Range, token: coc.CancellationToken): Promise<coc.SemanticTokens | null> {
 
         const v2Range: protocol.V2.Range = {
             Start: {
@@ -189,9 +191,9 @@ export default class SemanticTokensProvider extends AbstractProvider implements 
         return this._provideSemanticTokens(document, v2Range, token);
     }
 
-    async _provideSemanticTokens(document: vscode.TextDocument, range: protocol.V2.Range, token: vscode.CancellationToken): Promise<vscode.SemanticTokens | null> {
+    async _provideSemanticTokens(document: coc.TextDocument, range: protocol.V2.Range, token: coc.CancellationToken): Promise<coc.SemanticTokens | null> {
         // We can only semantically highlight file from disk.
-        if (document.uri.scheme !== "file") {
+        if (coc.Uri.parse(document.uri).scheme !== "file") {
             return null;
         }
 
@@ -200,7 +202,7 @@ export default class SemanticTokensProvider extends AbstractProvider implements 
             return null;
         }
 
-        let req = createRequest<protocol.V2.SemanticHighlightRequest>(document, new vscode.Position(0, 0));
+        let req = createRequest<protocol.V2.SemanticHighlightRequest>(document, { line: 0, character: 0 });
         req.Range = range;
 
         const versionBeforeRequest = document.version;
@@ -219,7 +221,7 @@ export default class SemanticTokensProvider extends AbstractProvider implements 
             throw new Error('busy');
         }
 
-        const builder = new vscode.SemanticTokensBuilder();
+        const builder = new coc.SemanticTokensBuilder();
         for (let span of response.Spans) {
             const tokenType = tokenTypeMap[span.Type];
             if (tokenType === undefined) {
@@ -239,7 +241,7 @@ export default class SemanticTokensProvider extends AbstractProvider implements 
             let spanRange = toRange2(span);
             for (let line = spanRange.start.line; line <= spanRange.end.line; line++) {
                 const startCharacter = (line === spanRange.start.line ? spanRange.start.character : 0);
-                const endCharacter = (line === spanRange.end.line ? spanRange.end.character : document.lineAt(line).text.length);
+                const endCharacter = (line === spanRange.end.line ? spanRange.end.character : coc.workspace.getDocument(document.uri).getline(line).length);
                 builder.push(line, startCharacter, endCharacter - startCharacter, tokenType, tokenModifiers);
             }
         }
@@ -248,25 +250,25 @@ export default class SemanticTokensProvider extends AbstractProvider implements 
 }
 
 const tokenTypes: string[] = [];
-tokenTypes[DefaultTokenType.comment] = SemanticTokenTypes.comment;
-tokenTypes[DefaultTokenType.string] = SemanticTokenTypes.string;
-tokenTypes[DefaultTokenType.keyword] = SemanticTokenTypes.keyword;
-tokenTypes[DefaultTokenType.number] = SemanticTokenTypes.number;
-tokenTypes[DefaultTokenType.regexp] = SemanticTokenTypes.regexp;
-tokenTypes[DefaultTokenType.operator] = SemanticTokenTypes.operator;
-tokenTypes[DefaultTokenType.namespace] = SemanticTokenTypes.namespace;
-tokenTypes[DefaultTokenType.type] = SemanticTokenTypes.type;
-tokenTypes[DefaultTokenType.struct] = SemanticTokenTypes.struct;
-tokenTypes[DefaultTokenType.class] = SemanticTokenTypes.class;
-tokenTypes[DefaultTokenType.interface] = SemanticTokenTypes.interface;
-tokenTypes[DefaultTokenType.enum] = SemanticTokenTypes.enum;
-tokenTypes[DefaultTokenType.typeParameter] = SemanticTokenTypes.typeParameter;
-tokenTypes[DefaultTokenType.function] = SemanticTokenTypes.function;
+tokenTypes[DefaultTokenType.comment] = "comment";
+tokenTypes[DefaultTokenType.string] = "string";
+tokenTypes[DefaultTokenType.keyword] = "keyword";
+tokenTypes[DefaultTokenType.number] = "number";
+tokenTypes[DefaultTokenType.regexp] = "regexp";
+tokenTypes[DefaultTokenType.operator] = "operator";
+tokenTypes[DefaultTokenType.namespace] = "namespace";
+tokenTypes[DefaultTokenType.type] = "type";
+tokenTypes[DefaultTokenType.struct] = "struct";
+tokenTypes[DefaultTokenType.class] = "class";
+tokenTypes[DefaultTokenType.interface] = "interface";
+tokenTypes[DefaultTokenType.enum] = "enum";
+tokenTypes[DefaultTokenType.typeParameter] = "typeParameter";
+tokenTypes[DefaultTokenType.function] = "function";
 tokenTypes[DefaultTokenType.member] = 'member';
-tokenTypes[DefaultTokenType.macro] = SemanticTokenTypes.macro;
-tokenTypes[DefaultTokenType.variable] = SemanticTokenTypes.variable;
-tokenTypes[DefaultTokenType.parameter] = SemanticTokenTypes.parameter;
-tokenTypes[DefaultTokenType.property] = SemanticTokenTypes.property;
+tokenTypes[DefaultTokenType.macro] = "macro";
+tokenTypes[DefaultTokenType.variable] = "variable";
+tokenTypes[DefaultTokenType.parameter] = "parameter";
+tokenTypes[DefaultTokenType.property] = "property";
 tokenTypes[DefaultTokenType.enumMember] = 'enumMember';
 tokenTypes[DefaultTokenType.event] = 'event';
 tokenTypes[DefaultTokenType.label] = 'label';
