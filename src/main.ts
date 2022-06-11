@@ -32,7 +32,6 @@ import { ShowOmniSharpConfigChangePrompt } from './observers/OptionChangeObserve
 import createOptionStream from './observables/CreateOptionStream';
 import { CSharpExtensionId } from './constants/CSharpExtensionId';
 import { OpenURLObserver } from './observers/OpenURLObserver';
-import { activateRazorExtension } from './razor/razor';
 import { RazorLoggerObserver } from './observers/RazorLoggerObserver';
 import { AbsolutePathPackage } from './packageManager/AbsolutePathPackage';
 import { downloadAndInstallPackages } from './packageManager/downloadAndInstallPackages';
@@ -147,10 +146,6 @@ export async function activate(context: coc.ExtensionContext): Promise<CSharpExt
     if (!optionProvider.GetLatestOptions().razorDisabled) {
         const razorObserver = new RazorLoggerObserver(omnisharpChannel);
         eventStream.subscribe(razorObserver.post);
-
-        if (!optionProvider.GetLatestOptions().razorDevMode) {
-            razorPromise = activateRazorExtension(context, extension.extensionPath, eventStream);
-        }
     }
 
     return {
