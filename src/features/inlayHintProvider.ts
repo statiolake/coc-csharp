@@ -8,8 +8,8 @@ import AbstractProvider from './abstractProvider';
 import { OmniSharpServer } from '../omnisharp/server';
 import { LanguageMiddlewareFeature } from '../omnisharp/LanguageMiddlewareFeature';
 import CompositeDisposable from '../CompositeDisposable';
-import { InlayHint, InlayHintRequest, InlayHintResolve as InlayHintResolveRequest, LinePositionSpanTextChange } from '../omnisharp/protocol';
-import { fromVSCodeRange, toVSCodePosition, toVSCodeTextEdit } from '../omnisharp/typeConversion';
+import { InlayHint, InlayHintRequest, InlayHintResolve as InlayHintResolveRequest } from '../omnisharp/protocol';
+import { fromVSCodeRange, toVSCodePosition } from '../omnisharp/typeConversion';
 import { isVirtualCSharpDocument } from './virtualDocumentTracker';
 
 export default class CSharpInlayHintProvider extends AbstractProvider implements coc.InlayHintsProvider {
@@ -83,9 +83,5 @@ export default class CSharpInlayHintProvider extends AbstractProvider implements
                 value: inlayHint.Tooltip ?? ""
             }
         };
-
-        function toVSCodeTextEdits(textEdits: LinePositionSpanTextChange[]): coc.TextEdit[] {
-            return textEdits ? textEdits.map(toVSCodeTextEdit) : undefined;
-        }
     }
 }

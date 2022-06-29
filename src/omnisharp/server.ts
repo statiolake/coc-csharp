@@ -550,6 +550,7 @@ export class OmniSharpServer {
     }
 
     public async restart(launchTarget: LaunchTarget | undefined = this._launchTarget): Promise<void> {
+        console.log("starting up with launchTarget");
         if (this._state.status === ServerState.Starting) {
             this.eventStream.post(new ObservableEvents.OmnisharpServerOnServerError("Attempt to restart OmniSharp server failed because another server instance is starting."));
             return;
@@ -564,6 +565,16 @@ export class OmniSharpServer {
 
     public async autoStart(preferredPath: string): Promise<void> {
         const options = this.optionProvider.GetLatestOptions();
+
+        // FIXME: debug
+        return this.restart({
+            label: "Tetris",
+            description: "tetris",
+            directory: coc.Uri.parse(coc.workspace.workspaceFolders[0].uri).fsPath,
+            target: coc.Uri.parse(coc.workspace.workspaceFolders[0].uri + "/Tetris.sln").fsPath,
+            workspaceKind: LaunchTargetKind.Solution,
+        });
+
         const launchTargets = await findLaunchTargets(options);
 
         // If there aren't any potential launch targets, we create file watcher and try to

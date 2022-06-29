@@ -51,7 +51,7 @@ export interface ActivationResult {
     readonly testManager: TestManager;
 }
 
-export async function activate(context: vscode.ExtensionContext, packageJSON: any, platformInfo: PlatformInformation, provider: NetworkSettingsProvider, eventStream: EventStream, optionProvider: OptionProvider, extensionPath: string) {
+export async function activate(logger: vscode.OutputChannel, context: vscode.ExtensionContext, packageJSON: any, platformInfo: PlatformInformation, provider: NetworkSettingsProvider, eventStream: EventStream, optionProvider: OptionProvider, extensionPath: string) {
     const documentSelector: vscode.DocumentSelector = [{ language: 'cs' }];
 
     const options = optionProvider.GetLatestOptions();
@@ -67,6 +67,8 @@ export async function activate(context: vscode.ExtensionContext, packageJSON: an
     let localDisposables: CompositeDisposable | undefined;
     const testManager = new TestManager(optionProvider, server, eventStream, languageMiddlewareFeature);
     const completionProvider = new CompletionProvider(server, languageMiddlewareFeature);
+
+    logger.appendLine("(OmniSharp.activate) variables set up");
 
     disposables.add(server.onServerStart(() => {
         // register language feature provider on start
@@ -185,8 +187,10 @@ export async function activate(context: vscode.ExtensionContext, packageJSON: an
         context.workspaceState.update('lastSolutionPathOrFolder', path);
     }));
 
+    logger.appendLine(`(OmniSharp.activate) configuration done, autostart: ${options.autoStart}.`);
     if (options.autoStart) {
         server.autoStart(context.workspaceState.get<string>('lastSolutionPathOrFolder', ''));
+        logger.appendLine("(OmniSharp.activate) Server launched");
     }
 
     // stop server on deactivate

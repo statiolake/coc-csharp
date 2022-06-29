@@ -59,19 +59,30 @@ export const disabledSchemes = new Set([
  * is included if there are any `*.csproj` files present, but a `*.sln` or `*.slnf` file is not found.
  */
 export async function findLaunchTargets(options: Options): Promise<LaunchTarget[]> {
+    console.log("finsing launch options");
     if (!coc.workspace.workspaceFolders) {
         return Promise.resolve([]);
     }
 
+    console.log("found workspaceFolders at", coc.workspace.workspaceFolders);
+    // FIXME: Debug
+    return resourcesToLaunchTargets([
+        coc.Uri.parse(coc.workspace.workspaceFolders[0].uri + '/Tetris/Tetris.csproj'),
+        coc.Uri.parse(coc.workspace.workspaceFolders[0].uri + '/Tetris.sln'),
+    ], options.maxProjectResults)
     const projectFiles = await coc.workspace.findFiles(
         /*include*/ '{**/*.sln,**/*.slnf,**/*.csproj,**/project.json,**/*.csx,**/*.cake}',
-        /*exclude*/ '{**/node_modules/**,**/.git/**,**/bower_components/**}');
+        /*exclude*/ '{**/node_modules/**,**/.git/**,**/bower_components/**}',
+        /*maxResults*/ options.maxProjectResults);
+    console.log("projectFiles:", projectFiles);
 
     const csFiles = await coc.workspace.findFiles(
         /*include*/ '{**/*.cs}',
         /*exclude*/ '{**/node_modules/**,**/.git/**,**/bower_components/**}',
-        /*maxResults*/ 1);
+        /*maxResults*/ options.maxProjectResults);
+    console.log("csFiles:", csFiles);
 
+    console.log("resolving resources");
     return resourcesToLaunchTargets(projectFiles.concat(csFiles), options.maxProjectResults);
 }
 

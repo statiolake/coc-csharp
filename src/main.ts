@@ -129,10 +129,12 @@ export async function activate(context: coc.ExtensionContext): Promise<CSharpExt
     let installDependencies: IInstallDependencies = async (dependencies: AbsolutePathPackage[]) => downloadAndInstallPackages(dependencies, networkSettingsProvider, eventStream, isValidDownload, useFramework);
     /* let runtimeDependenciesExist = */ await ensureRuntimeDependencies(extension, eventStream, platformInfo, installDependencies, useFramework);
 
+    csharpChannel.appendLine("Activating OmniSharp...");
     // activate language services
-    let langServicePromise = OmniSharp.activate(context, extension.packageJSON, platformInfo, networkSettingsProvider, eventStream, optionProvider, extension.extensionPath);
+    let langServicePromise = OmniSharp.activate(csharpChannel, context, extension.packageJSON, platformInfo, networkSettingsProvider, eventStream, optionProvider, extension.extensionPath);
 
     // register JSON completion & hover providers for project.json
+    csharpChannel.appendLine("Registering JSON helpers for project.json...");
     context.subscriptions.push(addJSONProviders());
     context.subscriptions.push(coc.window.onDidChangeActiveTextEditor(() => {
         eventStream.post(new ActiveTextEditorChanged());
@@ -145,7 +147,19 @@ export async function activate(context: coc.ExtensionContext): Promise<CSharpExt
     if (!optionProvider.GetLatestOptions().razorDisabled) {
         const razorObserver = new RazorLoggerObserver(omnisharpChannel);
         eventStream.subscribe(razorObserver.post);
+        // Razor is not supported in coc.nvim.
+        // TODO: Something like this can be supported by modifying it?
+        // https://github.com/dotnet/razor-tooling/tree/main/src/Razor/src/Microsoft.AspNetCore.Razor.VSCode
     }
+
+    csharpChannel.appendLine("Waiting for things to finish...");
+    const langService = await langServicePromise;
+    csharpChannel.appendLine("  Language server has been started.");
+    await langService.server.waitForEmptyEventQueue();
+    csharpChannel.appendLine("  Language server handled all events queued");
+    await razorPromise;
+    csharpChannel.appendLine("  Razor promise finished (not supported)")
+    csharpChannel.appendLine("All things are correctly set up.");
 
     return {
         initializationFinished: async () => {
