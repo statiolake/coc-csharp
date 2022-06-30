@@ -20,8 +20,6 @@ import { OmnisharpDebugModeLoggerObserver } from './observers/OmnisharpDebugMode
 import { OmnisharpLoggerObserver } from './observers/OmnisharpLoggerObserver';
 import { OmnisharpStatusBarObserver } from './observers/OmnisharpStatusBarObserver';
 import { PlatformInformation } from './platform';
-import { TelemetryObserver } from './observers/TelemetryObserver';
-import TelemetryReporter from 'vscode-extension-telemetry';
 import { addJSONProviders } from './features/json/jsonContributions';
 import { ProjectStatusBarObserver } from './observers/ProjectStatusBarObserver';
 import CSharpExtensionExports from './CSharpExtensionExports';
@@ -48,10 +46,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<CSharp
 
     const extensionId = CSharpExtensionId;
     const extension = vscode.extensions.all.find(e => e.id == extensionId) as vscode.Extension<CSharpExtensionExports>;
-    const extensionVersion = extension.packageJSON.version;
-    const aiKey = extension.packageJSON.contributes.debuggers[0].aiKey;
-    const reporter = new TelemetryReporter(extensionId, extensionVersion, aiKey);
-
     util.setExtensionPath(extension.extensionPath);
 
     const eventStream = new EventStream();
@@ -136,9 +130,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<CSharp
 
     // If the dotnet bundle is installed, this will ensure the dotnet CLI is on the path.
     await initializeDotnetPath();
-
-    let telemetryObserver = new TelemetryObserver(platformInfo, () => reporter);
-    eventStream.subscribe(telemetryObserver.post);
 
     let networkSettingsProvider = vscodeNetworkSettingsProvider();
     const useFramework = optionProvider.GetLatestOptions().useModernNet !== true;
