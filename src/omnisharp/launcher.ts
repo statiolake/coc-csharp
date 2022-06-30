@@ -83,7 +83,6 @@ export async function findLaunchTargets(options: Options): Promise<LaunchTarget[
         "!**/bower_components/**"
     ])).map(f => vscode.Uri.file(path.resolve(f)));
 
-    console.log("found: ", projectFiles, "and", csFiles);
     return resourcesToLaunchTargets(projectFiles.concat(csFiles), options.maxProjectResults);
 }
 
@@ -117,7 +116,6 @@ export function resourcesToLaunchTargets(resources: vscode.Uri[], maxProjectResu
     for (let resource of localResources) {
         let folder = vscode.workspace.getWorkspaceFolder(resource.toString());
         if (folder) {
-            console.log("workspaceFolders:", workspaceFolders, "folder:", folder);
             const index = workspaceFoldersUris.indexOf(folder.uri);
             let buckets: vscode.Uri[];
 
@@ -148,7 +146,6 @@ export function resourcesAndFolderMapToLaunchTargets(resources: vscode.Uri[], wo
     let otherTargets: LaunchTarget[] = [];
 
     workspaceFolderToUriMap.forEach((resources, folderIndex) => {
-        console.log("folderIndex:", folderIndex);
         let hasProjectJsonAtRoot = false;
         let hasCSX = false;
         let hasCake = false;
