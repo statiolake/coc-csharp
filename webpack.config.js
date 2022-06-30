@@ -21,6 +21,12 @@ const config = {
         'coc.nvim': "commonjs coc.nvim", // the vscode-module is created on-the-fly and must be excluded. Add other modules that cannot be webpack'ed, 📖 -> https://webpack.js.org/configuration/externals/
         'applicationinsights-native-metrics': 'commonjs applicationinsights-native-metrics', // we're not native
         '@opentelemetry/tracing': 'commonjs @opentelemetry/tracing', // optional
+        "node:fs": "commonjs fs",
+        "node:url": "commonjs url",
+        "node:process": "commonjs process",
+        "node:path": "commonjs path",
+        "node:stream": "commonjs stream",
+        "node:util": "commonjs util",
     },
     resolve: { // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
         extensions: ['.ts', '.js']

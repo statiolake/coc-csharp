@@ -12,6 +12,7 @@ import * as vscode from 'coc.nvim';
 import { Options } from './options';
 import { LaunchInfo } from './OmnisharpManager';
 import { IHostExecutableResolver } from '../constants/IHostExecutableResolver';
+import globby = require('globby');
 
 export enum LaunchTargetKind {
     Solution,
@@ -63,15 +64,26 @@ export async function findLaunchTargets(options: Options): Promise<LaunchTarget[
         return Promise.resolve([]);
     }
 
-    const projectFiles = await vscode.workspace.findFiles(
-        /*include*/ '{**/*.sln,**/*.slnf,**/*.csproj,**/project.json,**/*.csx,**/*.cake}',
-        /*exclude*/ '{**/node_modules/**,**/.git/**,**/bower_components/**}');
+    const projectFiles = (await globby([
+        "**/*.sln",
+        "**/*.slnf",
+        "**/*.csproj",
+        "**/project.json",
+        "**/*.csx",
+        "**/*.cake",
+        "!**/node_modules/**",
+        "!**/.git/**",
+        "!**/bower_components/**"
+    ])).map(f => vscode.Uri.file(path.resolve(f)));
 
-    const csFiles = await vscode.workspace.findFiles(
-        /*include*/ '{**/*.cs}',
-        /*exclude*/ '{**/node_modules/**,**/.git/**,**/bower_components/**}',
-        /*maxResults*/ 1);
+    const csFiles = (await globby([
+        "**/*.cs",
+        "!**/node_modules/**",
+        "!**/.git/**",
+        "!**/bower_components/**"
+    ])).map(f => vscode.Uri.file(path.resolve(f)));
 
+    console.log("found: ", projectFiles, "and", csFiles);
     return resourcesToLaunchTargets(projectFiles.concat(csFiles), options.maxProjectResults);
 }
 
