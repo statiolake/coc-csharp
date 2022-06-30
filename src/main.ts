@@ -64,7 +64,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<CSharp
     eventStream.subscribe(dotnetTestChannelObserver.post);
     eventStream.subscribe(dotnetTestLoggerObserver.post);
 
-    let csharpChannel = vscode.window.createOutputChannel('C#');
+    let csharpChannel = vscode.window.createOutputChannel('coc-csharp');
     let csharpchannelObserver = new CsharpChannelObserver(csharpChannel);
     let csharpLogObserver = new CsharpLoggerObserver(csharpChannel);
     eventStream.subscribe(csharpchannelObserver.post);

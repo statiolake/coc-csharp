@@ -577,10 +577,6 @@
     "coc": "^0.0.81"
   },
   "activationEvents": [
-    "onDebugInitialConfigurations",
-    "onDebugResolve:blazorwasm",
-    "onDebugResolve:coreclr",
-    "onDebugResolve:clr",
     "onLanguage:cs",
     "onLanguage:aspnetcorerazor",
     "onCommand:o.restart",
