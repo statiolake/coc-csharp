@@ -7,7 +7,7 @@ import AbstractSupport from './abstractProvider';
 import * as protocol from '../omnisharp/protocol';
 import * as serverUtils from '../omnisharp/utils';
 import { createRequest } from '../omnisharp/typeConversion';
-import { RenameProvider, WorkspaceEdit, TextDocument, Uri, CancellationToken, Position, Range } from 'coc.nvim';
+import { RenameProvider, WorkspaceEdit, TextDocument, Uri, CancellationToken, Position, Range, TextEdit } from 'coc.nvim';
 
 export default class OmnisharpRenameProvider extends AbstractSupport implements RenameProvider {
 
@@ -25,14 +25,22 @@ export default class OmnisharpRenameProvider extends AbstractSupport implements 
                 return undefined;
             }
 
-            const edit = new WorkspaceEdit();
+            const edit: WorkspaceEdit = { changes: {} };
             response.Changes.forEach(change => {
                 const uri = Uri.file(change.FileName);
 
                 change.Changes.forEach(change => {
-                    edit.replace(uri,
-                        new Range(change.StartLine, change.StartColumn, change.EndLine, change.EndColumn),
-                        change.NewText);
+                    edit.changes[uri.toString()].push(
+                        TextEdit.replace(
+                            Range.create(
+                                change.StartLine,
+                                change.StartColumn,
+                                change.EndLine,
+                                change.EndColumn
+                            ),
+                            change.NewText
+                        )
+                    );
                 });
             });
 

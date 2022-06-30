@@ -11,6 +11,7 @@ import { IDisposable } from '../Disposable';
 import CompositeDisposable from '../CompositeDisposable';
 import { EventStream } from '../EventStream';
 import { DocumentSynchronizationFailure } from '../omnisharp/loggingEvents';
+import * as vscode from 'coc.nvim';
 
 async function trackCurrentVirtualDocuments(server: OmniSharpServer, eventStream: EventStream) {
     for (let i = 0; i < workspace.textDocuments.length; i++) {
@@ -27,11 +28,13 @@ export function isVirtualCSharpDocument(document: TextDocument) {
         return false;
     }
 
-    if (document.uri.scheme === 'virtualCSharp-') {
+    const uri = vscode.Uri.parse(document.uri);
+
+    if (uri.scheme === 'virtualCSharp-') {
         return false;
     }
 
-    if (!document.uri.scheme.startsWith('virtualCSharp-')) {
+    if (!uri.scheme.startsWith('virtualCSharp-')) {
         return false;
     }
 
@@ -48,7 +51,9 @@ function trackFutureVirtualDocuments(server: OmniSharpServer, eventStream: Event
     });
 
     let onTextDocumentChange = workspace.onDidChangeTextDocument(async changeEvent => {
-        const document = changeEvent.document;
+        const document = vscode.workspace.getDocument(
+            changeEvent.textDocument.uri
+        ).textDocument;
 
         if (shouldIgnoreDocument(document, server)) {
             return;
@@ -86,10 +91,11 @@ function shouldIgnoreDocument(document: TextDocument, server: OmniSharpServer): 
 }
 
 async function openVirtualDocument(document: TextDocument, server: OmniSharpServer, eventStream: EventStream) {
-    let path = document.uri.fsPath;
+    const uri = vscode.Uri.parse(document.uri);
+    let path = uri.fsPath;
 
     if (!path) {
-        path = document.uri.path;
+        path = uri.path;
     }
 
     let req = { FileName: path, changeType: FileChangeType.Create };
@@ -100,30 +106,32 @@ async function openVirtualDocument(document: TextDocument, server: OmniSharpServ
         await changeVirtualDocument(document, server, eventStream);
     }
     catch (error) {
-        logSynchronizationFailure(document.uri, error, server, eventStream);
+        logSynchronizationFailure(uri, error, server, eventStream);
     }
 }
 
 async function changeVirtualDocument(document: TextDocument, server: OmniSharpServer, eventStream: EventStream) {
-    let path = document.uri.fsPath;
+    const uri = vscode.Uri.parse(document.uri);
+    let path = uri.fsPath;
 
     if (!path) {
-        path = document.uri.path;
+        path = uri.path;
     }
 
     try {
-        await serverUtils.updateBuffer(server, { Buffer: document.getText(), FileName: document.fileName });
+        await serverUtils.updateBuffer(server, { Buffer: document.getText(), FileName: vscode.Uri.parse(document.uri).fsPath });
     }
     catch (error) {
-        logSynchronizationFailure(document.uri, error, server, eventStream);
+        logSynchronizationFailure(uri, error, server, eventStream);
     }
 }
 
 async function closeVirtualDocument(document: TextDocument, server: OmniSharpServer, eventStream: EventStream) {
-    let path = document.uri.fsPath;
+    const uri = vscode.Uri.parse(document.uri);
+    let path = uri.fsPath;
 
     if (!path) {
-        path = document.uri.path;
+        path = uri.path;
     }
 
     let req = { FileName: path, changeType: FileChangeType.Delete };
@@ -131,7 +139,7 @@ async function closeVirtualDocument(document: TextDocument, server: OmniSharpSer
         await serverUtils.filesChanged(server, [req]);
     }
     catch (error) {
-        logSynchronizationFailure(document.uri, error, server, eventStream);
+        logSynchronizationFailure(uri, error, server, eventStream);
     }
 }
 

@@ -15,9 +15,8 @@ import { buildEditForResponse } from '../omnisharp/fileOperationsResponseEditBui
 import { CancellationToken } from 'vscode-languageserver-protocol';
 
 export class FixAllProvider extends AbstractProvider implements vscode.CodeActionProvider {
-    public static fixAllCodeActionKind =
-      vscode.CodeActionKind.SourceFixAll.append('csharp');
-  
+    public static fixAllCodeActionKind = vscode.CodeActionKind.SourceFixAll;
+
     public static metadata: vscode.CodeActionProviderMetadata = {
       providedCodeActionKinds: [FixAllProvider.fixAllCodeActionKind]
     };
@@ -33,7 +32,7 @@ export class FixAllProvider extends AbstractProvider implements vscode.CodeActio
 
     public async provideCodeActions(
         document: vscode.TextDocument,
-        _range: vscode.Range | vscode.Selection,
+        _range: vscode.Range,
         context: vscode.CodeActionContext,
         _token: vscode.CancellationToken,
     ): Promise<vscode.CodeAction[]> {
@@ -42,25 +41,38 @@ export class FixAllProvider extends AbstractProvider implements vscode.CodeActio
             return [];
         }
 
-        if (context.only.contains(FixAllProvider.fixAllCodeActionKind)) {
-            await this.applyFixes(document.fileName, FixAllScope.Document, undefined);
+        if (context.only.indexOf(FixAllProvider.fixAllCodeActionKind) >= 0) {
+            await this.applyFixes(vscode.Uri.parse(document.uri).fsPath, FixAllScope.Document, undefined);
         }
 
         return [];
     }
 
     private async fixAllMenu(server: OmniSharpServer, scope: protocol.FixAllScope): Promise<void> {
-        let availableFixes = await serverUtils.getFixAll(server, { FileName: vscode.window.activeTextEditor.document.fileName, Scope: scope });
+        let availableFixes = await serverUtils.getFixAll(
+            server,
+            {
+                FileName: vscode.Uri.parse(
+                        vscode.window.activeTextEditor.document.uri
+                    ).fsPath,
+                Scope: scope
+            });
 
-        let targets = availableFixes.Items.map(x => `${x.Id}: ${x.Message}`);
+        let targets: vscode.QuickPickItem[]
+            = availableFixes.Items.map(x => ({
+                label: `${x.Id}: ${x.Message}`
+            }));
 
         if (scope === protocol.FixAllScope.Document) {
-            targets = ["Fix all issues", ...targets];
+            targets = [{
+                label: "Fix all issues", ...targets
+            }];
         }
 
         return vscode.window.showQuickPick(targets, {
+            canPickMany: false,
             matchOnDescription: true,
-            placeHolder: `Select fix all action`
+            title: `Select fix all action`
         }).then(async selectedAction => {
             let filter: FixAllItem[] = undefined;
 
@@ -68,12 +80,18 @@ export class FixAllProvider extends AbstractProvider implements vscode.CodeActio
                 return;
             }
 
-            if (selectedAction !== "Fix all issues") {
-                let actionTokens = selectedAction.split(":");
+            if (selectedAction.label !== "Fix all issues") {
+                let actionTokens = selectedAction.label.split(":");
                 filter = [{ Id: actionTokens[0], Message: actionTokens[1] }];
             }
 
-            await this.applyFixes(vscode.window.activeTextEditor.document.fileName, scope, filter);
+            await this.applyFixes(
+                vscode.Uri.parse(
+                    vscode.window.activeTextEditor.document.uri
+                ).fsPath,
+                scope,
+                filter
+            );
         });
     }
 

@@ -166,15 +166,18 @@ export default class SemanticTokensProvider extends AbstractProvider implements 
     }
 
     getLegend(): vscode.SemanticTokensLegend {
-        return new vscode.SemanticTokensLegend(tokenTypes, tokenModifiers);
+        return {
+            tokenTypes,
+            tokenModifiers,
+        };
     }
 
-    async provideDocumentSemanticTokens(document: vscode.TextDocument, token: vscode.CancellationToken): Promise<vscode.SemanticTokens | null> {
+    async provideDocumentSemanticTokens(document: vscode.LinesTextDocument, token: vscode.CancellationToken): Promise<vscode.SemanticTokens | null> {
 
         return this._provideSemanticTokens(document, null, token);
     }
 
-    async provideDocumentRangeSemanticTokens(document: vscode.TextDocument, range: vscode.Range, token: vscode.CancellationToken): Promise<vscode.SemanticTokens | null> {
+    async provideDocumentRangeSemanticTokens(document: vscode.LinesTextDocument, range: vscode.Range, token: vscode.CancellationToken): Promise<vscode.SemanticTokens | null> {
 
         const v2Range: protocol.V2.Range = {
             Start: {
@@ -189,9 +192,9 @@ export default class SemanticTokensProvider extends AbstractProvider implements 
         return this._provideSemanticTokens(document, v2Range, token);
     }
 
-    async _provideSemanticTokens(document: vscode.TextDocument, range: protocol.V2.Range, token: vscode.CancellationToken): Promise<vscode.SemanticTokens | null> {
+    async _provideSemanticTokens(document: vscode.LinesTextDocument, range: protocol.V2.Range, token: vscode.CancellationToken): Promise<vscode.SemanticTokens | null> {
         // We can only semantically highlight file from disk.
-        if (document.uri.scheme !== "file") {
+        if (vscode.Uri.parse(document.uri).scheme !== "file") {
             return null;
         }
 
@@ -200,7 +203,7 @@ export default class SemanticTokensProvider extends AbstractProvider implements 
             return null;
         }
 
-        let req = createRequest<protocol.V2.SemanticHighlightRequest>(document, new vscode.Position(0, 0));
+        let req = createRequest<protocol.V2.SemanticHighlightRequest>(document, vscode.Position.create(0, 0));
         req.Range = range;
 
         const versionBeforeRequest = document.version;

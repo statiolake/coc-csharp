@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { StatusBarItem } from '../vscodeAdapter';
+import { StatusBarItem } from 'coc.nvim';
 import { BaseEvent } from '../omnisharp/loggingEvents';
 
 export abstract class BaseStatusBarItemObserver {
@@ -11,19 +11,13 @@ export abstract class BaseStatusBarItemObserver {
     constructor(private statusBarItem: StatusBarItem) {
     }
 
-    public SetAndShowStatusBar(text: string, command: string, color?: string, tooltip?: string) {
+    public SetAndShowStatusBar(text: string, _command: string, _color?: string, _tooltip?: string) {
         this.statusBarItem.text = text;
-        this.statusBarItem.command = command;
-        this.statusBarItem.color = color;
-        this.statusBarItem.tooltip = tooltip;
         this.statusBarItem.show();
     }
 
     public ResetAndHideStatusBar() {
         this.statusBarItem.text = undefined;
-        this.statusBarItem.command = undefined;
-        this.statusBarItem.color = undefined;
-        this.statusBarItem.tooltip = undefined;
         this.statusBarItem.hide();
     }
 

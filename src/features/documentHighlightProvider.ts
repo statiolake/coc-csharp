@@ -30,6 +30,6 @@ export default class OmnisharpDocumentHighlightProvider extends AbstractSupport 
     }
 
     private static _asDocumentHighlight(quickFix: protocol.QuickFix): DocumentHighlight {
-        return new DocumentHighlight(toRange(quickFix), DocumentHighlightKind.Read);
+        return { range: toRange(quickFix), kind: DocumentHighlightKind.Read };
     }
 }

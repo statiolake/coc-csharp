@@ -13,9 +13,9 @@ import CompositeDisposable from '../CompositeDisposable';
 function forwardDocumentChanges(server: OmniSharpServer): IDisposable {
 
     return workspace.onDidChangeTextDocument(event => {
-
-        let { document, contentChanges } = event;
-        if (document.isUntitled || document.languageId !== 'csharp' || document.uri.scheme !== 'file' || contentChanges.length === 0) {
+        let { textDocument, contentChanges } = event;
+        const document = workspace.getDocument(textDocument.uri);
+        if (document.languageId !== 'cs' || Uri.parse(document.uri).scheme !== 'file' || contentChanges.length === 0) {
             return;
         }
 
@@ -23,7 +23,7 @@ function forwardDocumentChanges(server: OmniSharpServer): IDisposable {
             return;
         }
 
-        serverUtils.updateBuffer(server, { Buffer: document.getText(), FileName: document.fileName }).catch(err => {
+        serverUtils.updateBuffer(server, { Buffer: document.textDocument.getText(), FileName: Uri.parse(document.uri).fsPath }).catch(err => {
             console.error(err);
             return err;
         });

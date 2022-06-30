@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import * as vscode from 'coc.nvim';
 import AbstractSupport from './abstractProvider';
 import * as protocol from '../omnisharp/protocol';
 import * as serverUtils from '../omnisharp/utils';
@@ -13,7 +14,7 @@ export default class FormattingSupport extends AbstractSupport implements Docume
     public async provideDocumentRangeFormattingEdits(document: TextDocument, range: Range, options: FormattingOptions, token: CancellationToken): Promise<TextEdit[]> {
 
         let request = <protocol.FormatRangeRequest>{
-            FileName: document.fileName,
+            FileName: vscode.Uri.parse(document.uri).fsPath,
             Line: range.start.line,
             Column: range.start.character,
             EndLine: range.end.line,
@@ -34,7 +35,7 @@ export default class FormattingSupport extends AbstractSupport implements Docume
     public async provideOnTypeFormattingEdits(document: TextDocument, position: Position, ch: string, options: FormattingOptions, token: CancellationToken): Promise<TextEdit[]> {
 
         let request = <protocol.FormatAfterKeystrokeRequest>{
-            FileName: document.fileName,
+            FileName: vscode.Uri.parse(document.uri).fsPath,
             Line: position.line,
             Column: position.character,
             Character: ch
@@ -52,8 +53,9 @@ export default class FormattingSupport extends AbstractSupport implements Docume
     }
 
     private static _asEditOptionation(change: protocol.TextChange): TextEdit {
-        return new TextEdit(
-            new Range(change.StartLine, change.StartColumn, change.EndLine, change.EndColumn),
-            change.NewText);
+        return TextEdit.replace(
+            Range.create(change.StartLine, change.StartColumn, change.EndLine, change.EndColumn),
+            change.NewText
+        );
     }
 }

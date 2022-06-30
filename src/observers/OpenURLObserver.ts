@@ -3,20 +3,20 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { vscode } from "../vscodeAdapter";
 import { BaseEvent, OpenURL } from "../omnisharp/loggingEvents";
 import { EventType } from "../omnisharp/EventType";
+import * as vscode from 'coc.nvim';
 
 export class OpenURLObserver {
 
-    constructor(private vscode: vscode) {
+    constructor() {
     }
 
     public post = (event: BaseEvent) => {
         switch (event.type) {
             case EventType.OpenURL:
                 let url = (<OpenURL>event).url;
-                this.vscode.env.openExternal(this.vscode.Uri.parse(url));
+                vscode.commands.executeCommand("vscode.open", vscode.Uri.parse(url));
                 break;
         }
     }

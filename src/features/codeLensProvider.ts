@@ -19,14 +19,15 @@ import SymbolPropertyNames = protocol.V2.SymbolPropertyNames;
 import SymbolRangeNames = protocol.V2.SymbolRangeNames;
 import { LanguageMiddlewareFeature } from '../omnisharp/LanguageMiddlewareFeature';
 
-abstract class OmniSharpCodeLens extends vscode.CodeLens {
+abstract class OmniSharpCodeLens implements vscode.CodeLens {
+    public range: vscode.Range
+    public command?: vscode.Command
     constructor(
         range: protocol.V2.Range,
         public fileName: string) {
-
-        super(new vscode.Range(
+        this.range = vscode.Range.create(
             range.Start.Line, range.Start.Column, range.End.Line, range.End.Column
-        ));
+        );
     }
 }
 
@@ -90,9 +91,9 @@ export default class OmniSharpCodeLensProvider extends AbstractProvider implemen
         }
 
         try {
-            const response = await serverUtils.codeStructure(this._server, { FileName: document.fileName }, token);
+            const response = await serverUtils.codeStructure(this._server, { FileName: vscode.Uri.parse(document.uri).fsPath }, token);
             if (response && response.Elements) {
-                return createCodeLenses(response.Elements, document.fileName, options);
+                return createCodeLenses(response.Elements, vscode.Uri.parse(document.uri).fsPath, options);
             }
         }
         catch (error) { }

@@ -17,7 +17,7 @@ export default class OmnisharpDocumentSymbolProvider extends AbstractSupport imp
 
     async provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken): Promise<vscode.DocumentSymbol[]> {
         try {
-            const response = await serverUtils.codeStructure(this._server, { FileName: document.fileName }, token);
+            const response = await serverUtils.codeStructure(this._server, { FileName: vscode.Uri.parse(document.uri).fsPath }, token);
 
             if (response && response.Elements) {
                 return createSymbols(response.Elements);
@@ -50,7 +50,13 @@ function createSymbolForElement(element: Structure.CodeElement): vscode.Document
     const fullRange = element.Ranges[SymbolRangeNames.Full];
     const nameRange = element.Ranges[SymbolRangeNames.Name];
 
-    return new vscode.DocumentSymbol(element.DisplayName, /*detail*/ "", toSymbolKind(element.Kind), toRange3(fullRange), toRange3(nameRange));
+    return {
+        name: element.DisplayName,
+        detail: "",
+        kind: toSymbolKind(element.Kind),
+        range: toRange3(fullRange),
+        selectionRange: toRange3(nameRange),
+    };
 }
 
 const kinds: { [kind: string]: vscode.SymbolKind; } = {};

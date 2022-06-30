@@ -13,7 +13,7 @@ import { fromVSCodeRange, toVSCodePosition, toVSCodeTextEdit } from '../omnishar
 import { isVirtualCSharpDocument } from './virtualDocumentTracker';
 
 export default class CSharpInlayHintProvider extends AbstractProvider implements vscode.InlayHintsProvider {
-    private readonly _onDidChangeInlayHints = new vscode.EventEmitter<void>();
+    private readonly _onDidChangeInlayHints = new vscode.Emitter<void>();
     public readonly onDidChangeInlayHints = this._onDidChangeInlayHints.event;
 
     private readonly _hintsMap = new Map<vscode.InlayHint, InlayHint>();
@@ -23,7 +23,8 @@ export default class CSharpInlayHintProvider extends AbstractProvider implements
         this.addDisposables(new CompositeDisposable(
             this._onDidChangeInlayHints,
             vscode.workspace.onDidChangeTextDocument(e => {
-                if (e.document.languageId === 'csharp') {
+                const document = vscode.workspace.getDocument(e.textDocument.uri);
+                if (document.languageId === 'cs') {
                     this._onDidChangeInlayHints.fire();
                 }
             })));
@@ -31,7 +32,7 @@ export default class CSharpInlayHintProvider extends AbstractProvider implements
 
     async provideInlayHints(document: vscode.TextDocument, range: vscode.Range, token: vscode.CancellationToken): Promise<vscode.InlayHint[]> {
         // Exclude documents from other schemes, such as those in the diff view.
-        if (document.uri.scheme !== "file") {
+        if (vscode.Uri.parse(document.uri).scheme !== "file") {
             return [];
         }
 
@@ -41,7 +42,7 @@ export default class CSharpInlayHintProvider extends AbstractProvider implements
 
         const request: InlayHintRequest = {
             Location: {
-                FileName: document.fileName,
+                FileName: vscode.Uri.parse(document.uri).fsPath,
                 Range: fromVSCodeRange(range)
             }
         };
@@ -78,7 +79,10 @@ export default class CSharpInlayHintProvider extends AbstractProvider implements
         return {
             label: inlayHint.Label,
             position: toVSCodePosition(inlayHint.Position),
-            tooltip: new vscode.MarkdownString(inlayHint.Tooltip ?? ""),
+            tooltip: {
+                kind: vscode.MarkupKind.Markdown,
+                value: inlayHint.Tooltip ?? ""
+            },
             textEdits: toVSCodeTextEdits(inlayHint.TextEdits),
         };
 

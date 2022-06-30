@@ -3,8 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as vscode from '../vscodeAdapter';
 import { BaseEvent } from '../omnisharp/loggingEvents';
+import * as vscode from 'coc.nvim';
 
 export abstract class BaseChannelObserver {
 

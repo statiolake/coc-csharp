@@ -113,7 +113,7 @@ export class ProjectJSONContribution implements IJSONContribution {
                                     insertText += ',';
                                 }
                             }
-                            let proposal = new CompletionItem(name);
+                            let proposal: CompletionItem = { label: name };
                             proposal.kind = CompletionItemKind.Property;
                             proposal.insertText = insertText;
                             proposal.filterText = JSON.stringify(name);
@@ -145,7 +145,7 @@ export class ProjectJSONContribution implements IJSONContribution {
                             for (let i = 0; i < results.length; i++) {
                                 let curr = results[i];
                                 let name = JSON.stringify(curr);
-                                let proposal = new CompletionItem(name);
+                                let proposal: CompletionItem = { label: name };
                                 proposal.kind = CompletionItemKind.Class;
                                 proposal.insertText = name;
                                 proposal.documentation = '';
@@ -175,7 +175,9 @@ export class ProjectJSONContribution implements IJSONContribution {
                 'dnxcore50': {}
             }
         };
-        let proposal = new CompletionItem(localize('json.project.default', 'Default project.json'));
+        const proposal: CompletionItem = {
+            label: localize('json.project.default', 'Default project.json'),
+        };
         proposal.kind = CompletionItemKind.Module;
         proposal.insertText = JSON.stringify(defaultValue, null, '\t');
         result.add(proposal);

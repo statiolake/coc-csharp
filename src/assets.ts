@@ -50,10 +50,10 @@ export class AssetGenerator {
                 resourcePath = workspaceInfo.MsBuild.SolutionPath;
             }
 
-            this.workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(resourcePath));
+            this.workspaceFolder = vscode.workspace.getWorkspaceFolder(resourcePath);
         }
 
-        this.vscodeFolder = path.join(this.workspaceFolder.uri.fsPath, '.vscode');
+        this.vscodeFolder = path.join(vscode.Uri.parse(this.workspaceFolder.uri).fsPath, '.vscode');
         this.tasksJsonPath = path.join(this.vscodeFolder, 'tasks.json');
         this.launchJsonPath = path.join(this.vscodeFolder, 'launch.json');
 
@@ -106,8 +106,9 @@ export class AssetGenerator {
             }
             else {
                 selectedItem = await vscode.window.showQuickPick(itemNames, {
+                    canPickMany: false,
                     matchOnDescription: true,
-                    placeHolder: "Select the project to launch"
+                    title: "Select the project to launch"
                 });
             }
             if (!selectedItem || !mapItemNameToProject[selectedItem]) {
@@ -162,7 +163,7 @@ export class AssetGenerator {
         }
 
         const startupProjectDir = path.dirname(this.startupProject.Path);
-        const relativeProjectDir = path.join('${workspaceFolder}', path.relative(this.workspaceFolder.uri.fsPath, startupProjectDir));
+        const relativeProjectDir = path.join('${workspaceFolder}', path.relative(vscode.Uri.parse(this.workspaceFolder.uri).fsPath, startupProjectDir));
         const configurationName = 'Debug';
         const targetFramework = protocol.findNetCoreTargetFramework(this.startupProject);
         const result = path.join(relativeProjectDir, `bin/${configurationName}/${targetFramework.ShortName}/${this.startupProject.AssemblyName}.dll`);
@@ -176,26 +177,7 @@ export class AssetGenerator {
 
         const startupProjectDir = path.dirname(this.startupProject.Path);
 
-        return path.join('${workspaceFolder}', path.relative(this.workspaceFolder.uri.fsPath, startupProjectDir));
-    }
-
-    public createLaunchJsonConfigurationsArray(programLaunchType: ProgramLaunchType): vscode.DebugConfiguration[] {
-        const launchJson: string = this.createLaunchJsonConfigurations(programLaunchType);
-
-        const configurationArray: vscode.DebugConfiguration[] = JSON.parse(launchJson);
-
-        // Remove comments
-        configurationArray.forEach((configuration) => {
-            for (const key in configuration) {
-                if (Object.prototype.hasOwnProperty.call(configuration, key)) {
-                    if (key.startsWith("OS-COMMENT")) {
-                        delete configuration[key];
-                    }
-                }
-            }
-        });
-
-        return configurationArray;
+        return path.join('${workspaceFolder}', path.relative(vscode.Uri.parse(this.workspaceFolder.uri).fsPath, startupProjectDir));
     }
 
     public createLaunchJsonConfigurations(programLaunchType: ProgramLaunchType): string {
@@ -301,7 +283,7 @@ export class AssetGenerator {
             buildProject = this.fallbackBuildProject;
         }
         if (buildProject) {
-            const buildPath = path.join('${workspaceFolder}', path.relative(this.workspaceFolder.uri.fsPath, buildProject.Path));
+            const buildPath = path.join('${workspaceFolder}', path.relative(vscode.Uri.parse(this.workspaceFolder.uri).fsPath, buildProject.Path));
             return util.convertNativePathToPosix(buildPath);
         }
 
@@ -397,38 +379,6 @@ export function createLaunchConfiguration(programPath: string, workingDirectory:
     };
 
     return JSON.stringify(configuration);
-}
-
-// DebugConfiguration written to launch.json when the extension fails to generate a good configuration
-export function createFallbackLaunchConfiguration(): vscode.DebugConfiguration {
-    return {
-        "name": ".NET Core Launch (console)",
-        "type": "coreclr",
-        "request": "launch",
-        "WARNING01": "*********************************************************************************",
-        "WARNING02": "The C# extension was unable to automatically decode projects in the current",
-        "WARNING03": "workspace to create a runnable launch.json file. A template launch.json file has",
-        "WARNING04": "been created as a placeholder.",
-        "WARNING05": "",
-        "WARNING06": "If OmniSharp is currently unable to load your project, you can attempt to resolve",
-        "WARNING07": "this by restoring any missing project dependencies (example: run 'dotnet restore')",
-        "WARNING08": "and by fixing any reported errors from building the projects in your workspace.",
-        "WARNING09": "If this allows OmniSharp to now load your project then --",
-        "WARNING10": "  * Delete this file",
-        "WARNING11": "  * Open the Visual Studio Code command palette (View->Command Palette)",
-        "WARNING12": "  * run the command: '.NET: Generate Assets for Build and Debug'.",
-        "WARNING13": "",
-        "WARNING14": "If your project requires a more complex launch configuration, you may wish to delete",
-        "WARNING15": "this configuration and pick a different template using the 'Add Configuration...'",
-        "WARNING16": "button at the bottom of this file.",
-        "WARNING17": "*********************************************************************************",
-        "preLaunchTask": "build",
-        "program": "${workspaceFolder}/bin/Debug/<insert-target-framework-here>/<insert-project-name-here>.dll",
-        "args": [],
-        "cwd": "${workspaceFolder}",
-        "console": "internalConsole",
-        "stopAtEntry": false
-    };
 }
 
 // AttachConfiguration
@@ -563,7 +513,7 @@ async function promptToAddAssets(workspaceFolder: vscode.WorkspaceFolder) {
         const noItem: PromptItem = { title: 'Not Now', result: PromptResult.No, isCloseAffordance: true };
         const disableItem: PromptItem = { title: "Don't Ask Again", result: PromptResult.Disable };
 
-        const projectName = path.basename(workspaceFolder.uri.fsPath);
+        const projectName = path.basename(vscode.Uri.parse(workspaceFolder.uri).fsPath);
 
         if (!getBuildAssetsNotificationSetting()) {
             vscode.window.showWarningMessage(

@@ -64,7 +64,7 @@ export default class CSharpDefinitionProvider extends AbstractSupport implements
                         // if it is part of an already used metadata file, retrieve its uri instead of going to the physical file
                         const uri = this.definitionMetadataDocumentProvider.getExistingMetadataResponseUri(definition.Location.FileName);
                         const vscodeRange = toRange3(definition.Location.Range);
-                        locations.push(new Location(uri, vscodeRange));
+                        locations.push(Location.create(uri.toString(), vscodeRange));
                         continue;
                     }
 
@@ -84,7 +84,7 @@ export default class CSharpDefinitionProvider extends AbstractSupport implements
 
                     const uri: Uri = this.definitionMetadataDocumentProvider.addMetadataResponse(metadataResponse);
                     const vscodeRange = toRange3(definition.Location.Range);
-                    locations.push(new Location(uri, vscodeRange));
+                    locations.push(Location.create(uri.toString(), vscodeRange));
                 } else if (definition.SourceGeneratedFileInfo) {
                     // File is source generated
                     let uri = this.sourceGeneratedDocumentProvider.tryGetExistingSourceGeneratedFile(definition.SourceGeneratedFileInfo);
@@ -98,7 +98,7 @@ export default class CSharpDefinitionProvider extends AbstractSupport implements
                         uri = this.sourceGeneratedDocumentProvider.addSourceGeneratedFile(definition.SourceGeneratedFileInfo, sourceGeneratedFileResponse);
                     }
 
-                    locations.push(new Location(uri, toRange3(definition.Location.Range)));
+                    locations.push(Location.create(uri.toString(), toRange3(definition.Location.Range)));
                 } else {
                     // if it is a normal source definition, convert the response to a location
                     locations.push(toVscodeLocation(definition.Location));

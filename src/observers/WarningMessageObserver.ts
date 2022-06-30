@@ -4,7 +4,6 @@
 *--------------------------------------------------------------------------------------------*/
 
 import { debounceTime } from 'rxjs/operators';
-import { vscode } from '../vscodeAdapter';
 import { BaseEvent, OmnisharpServerMsBuildProjectDiagnostics } from "../omnisharp/loggingEvents";
 import { Scheduler, Subject } from 'rxjs';
 
@@ -14,11 +13,11 @@ import { EventType } from '../omnisharp/EventType';
 export class WarningMessageObserver {
     private warningMessageDebouncer: Subject<BaseEvent>;
 
-    constructor(private vscode: vscode, private disableMsBuildDiagnosticWarning: () => boolean, scheduler?: Scheduler) {
+    constructor(private disableMsBuildDiagnosticWarning: () => boolean, scheduler?: Scheduler) {
         this.warningMessageDebouncer = new Subject<BaseEvent>();
         this.warningMessageDebouncer.pipe(debounceTime(1500, scheduler)).subscribe(async event => {
             let message = "Some projects have trouble loading. Please review the output for more details.";
-            await showWarningMessage(this.vscode, message, { title: "Show Output", command: 'o.showOutput' });
+            await showWarningMessage(message, { title: "Show Output", command: 'o.showOutput' });
         });
     }
 

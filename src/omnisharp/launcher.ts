@@ -100,23 +100,30 @@ export function resourcesToLaunchTargets(resources: vscode.Uri[], maxProjectResu
 
     let workspaceFolderToUriMap = new Map<number, vscode.Uri[]>();
 
+    const workspaceFolders = vscode.workspace.workspaceFolders.concat();
     for (let resource of localResources) {
-        let folder = vscode.workspace.getWorkspaceFolder(resource);
+        let folder = vscode.workspace.getWorkspaceFolder(resource.toString());
         if (folder) {
+            const index = workspaceFolders.indexOf(folder);
             let buckets: vscode.Uri[];
 
-            if (workspaceFolderToUriMap.has(folder.index)) {
-                buckets = workspaceFolderToUriMap.get(folder.index)!; // Ensured valid via has.
+            if (workspaceFolderToUriMap.has(index)) {
+                buckets = workspaceFolderToUriMap.get(index)!; // Ensured valid via has.
             } else {
                 buckets = [];
-                workspaceFolderToUriMap.set(folder.index, buckets);
+                workspaceFolderToUriMap.set(index, buckets);
             }
 
             buckets.push(resource);
         }
     }
 
-    return resourcesAndFolderMapToLaunchTargets(resources, vscode.workspace.workspaceFolders.concat(), workspaceFolderToUriMap, maxProjectResults);
+    return resourcesAndFolderMapToLaunchTargets(
+        resources,
+        workspaceFolders,
+        workspaceFolderToUriMap,
+        maxProjectResults
+    );
 }
 
 export function resourcesAndFolderMapToLaunchTargets(resources: vscode.Uri[], workspaceFolders: vscode.WorkspaceFolder[], workspaceFolderToUriMap: Map<number, vscode.Uri[]>, maxProjectResults: number): LaunchTarget[] {
@@ -133,7 +140,7 @@ export function resourcesAndFolderMapToLaunchTargets(resources: vscode.Uri[], wo
         let hasCs = false;
 
         let folder = workspaceFolders[folderIndex];
-        let folderPath = folder.uri.fsPath;
+        let folderPath = vscode.Uri.parse(folder.uri).fsPath;
 
         resources.forEach(resource => {
             // Add .sln and .slnf files

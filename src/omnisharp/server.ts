@@ -9,7 +9,6 @@ import * as path from 'path';
 import * as protocol from './protocol';
 import * as utils from '../common';
 import * as serverUtils from '../omnisharp/utils';
-import { vscode, CancellationToken } from '../vscodeAdapter';
 import { ChildProcess, exec } from 'child_process';
 import { LaunchTarget, findLaunchTargets, LaunchTargetKind } from './launcher';
 import { createInterface } from 'readline';
@@ -33,6 +32,7 @@ import OptionProvider from '../observers/OptionProvider';
 import { IHostExecutableResolver } from '../constants/IHostExecutableResolver';
 import { showProjectSelector } from '../features/commands';
 import { removeBOMFromBuffer, removeBOMFromString } from '../utils/removeBOM';
+import * as vscode from 'coc.nvim';
 
 enum ServerState {
     Starting,
@@ -109,7 +109,6 @@ export class OmniSharpServer {
     private firstUpdateProject: boolean;
 
     constructor(
-        private vscode: vscode,
         networkSettingsProvider: NetworkSettingsProvider,
         private packageJSON: any,
         private platformInfo: PlatformInformation,
@@ -572,7 +571,7 @@ export class OmniSharpServer {
         if (launchTargets.length === 0) {
             await new Promise<void>((resolve, reject) => {
                 // 1st watch for files
-                const watcher = this.vscode.workspace.createFileSystemWatcher('{**/*.sln,**/*.slnf,**/*.csproj,**/project.json,**/*.csx,**/*.cake}',
+                const watcher = vscode.workspace.createFileSystemWatcher('{**/*.sln,**/*.slnf,**/*.csproj,**/project.json,**/*.csx,**/*.cake}',
                     /*ignoreCreateEvents*/ false,
                     /*ignoreChangeEvents*/ true,
                     /*ignoreDeleteEvents*/ true);
@@ -628,7 +627,7 @@ export class OmniSharpServer {
 
     // --- requests et al
 
-    public async makeRequest<TResponse>(command: string, data?: any, token?: CancellationToken): Promise<TResponse> {
+    public async makeRequest<TResponse>(command: string, data?: any, token?: vscode.CancellationToken): Promise<TResponse> {
         if (!this.isRunning()) {
             return Promise.reject<TResponse>('OmniSharp server is not running.');
         }

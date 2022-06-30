@@ -12,7 +12,6 @@ import * as vscode from 'coc.nvim';
 import CompositeDisposable from '../CompositeDisposable';
 import { IDisposable } from '../Disposable';
 import { isVirtualCSharpDocument } from './virtualDocumentTracker';
-import { TextDocument } from '../vscodeAdapter';
 import OptionProvider from '../observers/OptionProvider';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
@@ -156,10 +155,12 @@ class DiagnosticsProvider extends AbstractSupport {
             this._server.onProjectChange(() => this._validateAllPipe.next("onProjectChanged"), this),
             this._server.onProjectDiagnosticStatus(this._onProjectAnalysis, this),
             vscode.workspace.onDidOpenTextDocument(event => this._onDocumentOpenOrChange(event), this),
-            vscode.workspace.onDidChangeTextDocument(event => this._onDocumentOpenOrChange(event.document), this),
+            vscode.workspace.onDidChangeTextDocument(event => {
+                const document = vscode.workspace.getDocument(event.textDocument.uri);
+                this._onDocumentOpenOrChange(document.textDocument);
+            }, this),
             vscode.workspace.onDidCloseTextDocument(this._onDocumentClose, this),
             vscode.window.onDidChangeActiveTextEditor(event => this._onDidChangeActiveTextEditor(event), this),
-            vscode.window.onDidChangeWindowState(event => this._OnDidChangeWindowState(event), this),
         );
     }
 
@@ -170,12 +171,12 @@ class DiagnosticsProvider extends AbstractSupport {
         this._disposable.dispose();
     }
 
-    private shouldIgnoreDocument(document: TextDocument) {
+    private shouldIgnoreDocument(document: vscode.TextDocument) {
         if (document.languageId !== 'csharp') {
             return true;
         }
 
-        if (document.uri.scheme !== 'file' &&
+        if (vscode.Uri.parse(document.uri).scheme !== 'file' &&
             !isVirtualCSharpDocument(document)) {
             return true;
         }
@@ -183,16 +184,11 @@ class DiagnosticsProvider extends AbstractSupport {
         return false;
     }
 
-    private _OnDidChangeWindowState(windowState: vscode.WindowState): void {
-        if (windowState.focused === true) {
-            this._onDidChangeActiveTextEditor(vscode.window.activeTextEditor);
-        }
-    }
-
     private _onDidChangeActiveTextEditor(textEditor: vscode.TextEditor): void {
         // active text editor can be undefined.
         if (textEditor != undefined && textEditor.document != null) {
-            this._onDocumentOpenOrChange(textEditor.document);
+            const document = vscode.workspace.getDocument(textEditor.document.uri);
+            this._onDocumentOpenOrChange(document.textDocument);
         }
     }
 
@@ -235,7 +231,7 @@ class DiagnosticsProvider extends AbstractSupport {
 
         let source = new vscode.CancellationTokenSource();
         try {
-            let value = await serverUtils.codeCheck(this._server, { FileName: document.fileName }, source.token);
+            let value = await serverUtils.codeCheck(this._server, { FileName: vscode.Uri.parse(document.uri).fsPath }, source.token);
             let quickFixes = value.QuickFixes;
             // Easy case: If there are no diagnostics in the file, we can clear it quickly.
             if (quickFixes.length === 0) {
@@ -260,12 +256,12 @@ class DiagnosticsProvider extends AbstractSupport {
     // diagnostic fallback to mode where only open documents are analyzed.
     private async _validateOpenDocuments() {
         for (let editor of vscode.window.visibleTextEditors) {
-            let document = editor.document;
-            if (this.shouldIgnoreDocument(document)) {
+            let document = vscode.workspace.getDocument(editor.document.uri);
+            if (this.shouldIgnoreDocument(document.textDocument)) {
                 continue;
             }
 
-            await this._validateDocument(document);
+            await this._validateDocument(document.textDocument);
         }
     }
 
@@ -281,8 +277,8 @@ class DiagnosticsProvider extends AbstractSupport {
         let quickFixes = value.QuickFixes
             .sort((a, b) => a.FileName.localeCompare(b.FileName));
 
-        let entries: [vscode.Uri, vscode.Diagnostic[]][] = [];
-        let lastEntry: [vscode.Uri, vscode.Diagnostic[]];
+        let entries: [string, vscode.Diagnostic[]][] = [];
+        let lastEntry: [string, vscode.Diagnostic[]];
 
         for (let diagnosticInFile of this._mapQuickFixesAsDiagnosticsInFile(quickFixes)) {
             let uri = vscode.Uri.file(diagnosticInFile.fileName);
@@ -293,8 +289,8 @@ class DiagnosticsProvider extends AbstractSupport {
                 // We're replacing all diagnostics in this file. Pushing an entry with undefined for
                 // the diagnostics first ensures that the previous diagnostics for this file are
                 // cleared. Otherwise, new entries will be merged with the old ones.
-                entries.push([uri, undefined]);
-                lastEntry = [uri, [diagnosticInFile.diagnostic]];
+                entries.push([uri.toString(), undefined]);
+                lastEntry = [uri.toString(), [diagnosticInFile.diagnostic]];
                 entries.push(lastEntry);
             }
         }
@@ -319,7 +315,7 @@ class DiagnosticsProvider extends AbstractSupport {
 
         let message = `${quickFix.Text} [${quickFix.Projects.map(n => this._asProjectLabel(n)).join(', ')}]`;
 
-        let diagnostic = new vscode.Diagnostic(toRange(quickFix), message, display.severity);
+        let diagnostic = vscode.Diagnostic.create(toRange(quickFix), message, display.severity);
         diagnostic.source = 'csharp';
         diagnostic.code = quickFix.Id;
 

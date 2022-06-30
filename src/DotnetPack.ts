@@ -11,7 +11,7 @@ export interface DotnetPackExtensionExports {
 }
 
 export async function getDotnetPackApi(): Promise<DotnetPackExtensionExports> {
-    const dotnetExtension = vscode.extensions.getExtension<DotnetPackExtensionExports>(dotnetPackExtensionId);
+    const dotnetExtension = vscode.extensions.all.find(e => e.id == dotnetPackExtensionId);
     if (!dotnetExtension) {
         return null;
     }
@@ -20,5 +20,5 @@ export async function getDotnetPackApi(): Promise<DotnetPackExtensionExports> {
         await dotnetExtension.activate();
     }
 
-    return dotnetExtension.exports;
+    return dotnetExtension.exports as DotnetPackExtensionExports;
 }

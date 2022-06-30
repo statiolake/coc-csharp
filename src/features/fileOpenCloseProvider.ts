@@ -25,9 +25,8 @@ class FileOpenCloseProvider implements IDisposable {
 
         setTimeout(async () => {
             for (let editor of vscode.window.visibleTextEditors) {
-                let document = editor.document;
-
-                await this._onDocumentOpen(document);
+                let document = vscode.workspace.getDocument(editor.document.uri);
+                await this._onDocumentOpen(document.textDocument);
             }
         }, 0);
 
@@ -43,7 +42,7 @@ class FileOpenCloseProvider implements IDisposable {
             return;
         }
 
-        await serverUtils.fileOpen(this._server, { FileName: e.fileName });
+        await serverUtils.fileOpen(this._server, { FileName: vscode.Uri.parse(e.uri).fsPath });
     }
 
     private async _onDocumentClose(e: vscode.TextDocument) {
@@ -51,11 +50,13 @@ class FileOpenCloseProvider implements IDisposable {
             return;
         }
 
-        await serverUtils.fileClose(this._server, { FileName: e.fileName });
+        await serverUtils.fileClose(this._server, { FileName: vscode.Uri.parse(e.uri).fsPath });
     }
 
     private async _onActiveTextEditorChange(e: vscode.TextEditor | undefined) {
-        if (e === undefined || shouldIgnoreDocument(e.document)) {
+        if (e === undefined || shouldIgnoreDocument(
+            vscode.workspace.getDocument(e.document.uri).textDocument)
+        ) {
             return;
         }
 
@@ -70,18 +71,22 @@ class FileOpenCloseProvider implements IDisposable {
         //
         // Instead we will update the buffer for the current document which causes diagnostics to be
         // recomputed.
-        await serverUtils.updateBuffer(this._server, { FileName: e.document.fileName, Buffer: e.document.getText() });
+        await serverUtils.updateBuffer(this._server, {
+            FileName: vscode.Uri.parse(e.document.uri).fsPath,
+            Buffer: vscode.workspace.getDocument(e.document.uri)
+                .textDocument.getText()
+        });
     }
 
     dispose = () => this._disposable.dispose();
 }
 
 function shouldIgnoreDocument(document: vscode.TextDocument) {
-    if (document.languageId !== 'csharp') {
+    if (document.languageId !== 'cs') {
         return true;
     }
 
-    if (document.uri.scheme !== 'file' &&
+    if (vscode.Uri.parse(document.uri).scheme !== 'file' &&
         !isVirtualCSharpDocument(document)) {
         return true;
     }

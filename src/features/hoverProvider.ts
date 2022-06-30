@@ -7,7 +7,7 @@ import AbstractSupport from './abstractProvider';
 import * as protocol from '../omnisharp/protocol';
 import * as serverUtils from '../omnisharp/utils';
 import { createRequest } from '../omnisharp/typeConversion';
-import { HoverProvider, Hover, TextDocument, CancellationToken, Position, MarkdownString } from 'coc.nvim';
+import { HoverProvider, Hover, TextDocument, CancellationToken, Position, MarkupContent, MarkupKind } from 'coc.nvim';
 
 export default class OmniSharpHoverProvider extends AbstractSupport implements HoverProvider {
 
@@ -19,10 +19,12 @@ export default class OmniSharpHoverProvider extends AbstractSupport implements H
                 return undefined;
             }
 
-            const markdownString = new MarkdownString;
-            markdownString.appendMarkdown(response.Markdown);
+            const markdownString: MarkupContent = {
+                kind: MarkupKind.Markdown,
+                value: response.Markdown,
+            }
 
-            return new Hover(markdownString);
+            return { contents: markdownString };
         }
         catch (error) {
             return undefined;

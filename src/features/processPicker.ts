@@ -28,10 +28,9 @@ export class AttachPicker {
         return this.attachItemsProvider.getAttachItems()
             .then(processEntries => {
                 let attachPickOptions: vscode.QuickPickOptions = {
-                    ignoreFocusOut: true,
+                    canPickMany: false,
                     matchOnDescription: true,
-                    matchOnDetail: true,
-                    placeHolder: "Select the process to attach to"
+                    title: "Select the process to attach to"
                 };
 
                 return vscode.window.showQuickPick(processEntries, attachPickOptions)
@@ -225,10 +224,9 @@ export class RemoteAttachPicker {
                 .then(async pipeCmd => RemoteAttachPicker.getRemoteOSAndProcesses(pipeCmd, pipeTransport.pipeCwd, platformInfo))
                 .then(processes => {
                     let attachPickOptions: vscode.QuickPickOptions = {
-                        ignoreFocusOut: true,
+                        canPickMany: false,
                         matchOnDescription: true,
-                        matchOnDetail: true,
-                        placeHolder: "Select the process to attach to"
+                        title: "Select the process to attach to"
                     };
                     return vscode.window.showQuickPick(processes, attachPickOptions);
                 });
@@ -272,7 +270,6 @@ export class Process {
         return {
             label: this.name,
             description: this.pid,
-            detail: this.commandLine,
             id: this.pid,
             flags: this.flags
         };

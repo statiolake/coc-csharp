@@ -23,7 +23,7 @@ export default class CodeActionProvider extends AbstractProvider implements vsco
         this.addDisposables(new CompositeDisposable(registerCommandDisposable));
     }
 
-    public async provideCodeActions(document: vscode.TextDocument, range: vscode.Range | vscode.Selection, context: vscode.CodeActionContext, token: vscode.CancellationToken): Promise<vscode.CodeAction[]> {
+    public async provideCodeActions(document: vscode.TextDocument, range: vscode.Range, context: vscode.CodeActionContext, token: vscode.CancellationToken): Promise<vscode.CodeAction[]> {
         const options = this.optionProvider.GetLatestOptions();
         if (options.disableCodeActions) {
             return;
@@ -33,21 +33,10 @@ export default class CodeActionProvider extends AbstractProvider implements vsco
         const column = range.start.character;
 
         const request: protocol.V2.GetCodeActionsRequest = {
-            FileName: document.fileName,
+            FileName: vscode.Uri.parse(document.uri).fsPath,
             Line: line,
             Column: column,
         };
-
-        // Only suggest selection-based refactorings when a selection exists.
-        // If there is no selection and the editor isn't focused,
-        // VS Code will pass us an empty Selection rather than a Range,
-        // hence the extra range.isEmpty check.
-        if (range instanceof vscode.Selection && !range.isEmpty) {
-            request.Selection = {
-                Start: { Line: range.start.line, Column: range.start.character },
-                End: { Line: range.end.line, Column: range.end.character }
-            };
-        }
 
         try {
             const response = await serverUtils.getCodeActions(this._server, request, token);

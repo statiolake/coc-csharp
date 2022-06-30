@@ -3,7 +3,7 @@
 *  Licensed under the MIT License. See License.txt in the project root for license information.
 *--------------------------------------------------------------------------------------------*/
 
-import * as vscode from "vscode";
+import * as vscode from "coc.nvim";
 import OptionProvider from "../observers/OptionProvider";
 
 const DecompilationAuthorizedOption = "csharp.decompilationAuthorized";
@@ -57,12 +57,10 @@ Your use of the Decompiler is optional.  Microsoft is not responsible and discla
 
 I agree to all of the foregoing:`;
 
-        const messageOptions: vscode.MessageOptions = { modal: true };
-
         const yesItem: PromptItem = { title: 'Yes', result: PromptResult.Yes };
         const noItem: PromptItem = { title: 'No', result: PromptResult.No, isCloseAffordance: true };
 
-        vscode.window.showWarningMessage(message, messageOptions, noItem, yesItem)
+        vscode.window.showWarningMessage(message, noItem, yesItem)
             .then(selection => resolve(selection?.result ?? PromptResult.Dismissed));
     });
 }

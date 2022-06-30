@@ -108,7 +108,7 @@ export async function requestWorkspaceInformation(server: OmniSharpServer) {
             blazorWebAssemblyProjectFound = blazorWebAssemblyProjectFound || isProjectBlazorWebAssemblyProject;
         }
 
-        if (blazorWebAssemblyProjectFound && !vscode.extensions.getExtension('ms-dotnettools.blazorwasm-companion')) {
+        if (blazorWebAssemblyProjectFound && !vscode.extensions.all.find(e => e.id == 'ms-dotnettools.blazorwasm-companion')) {
             // No need to await this call, we don't depend on the prompt being shown.
             showBlazorDebuggingExtensionPrompt(server);
         }

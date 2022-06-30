@@ -3,7 +3,6 @@
 *  Licensed under the MIT License. See License.txt in the project root for license information.
 *--------------------------------------------------------------------------------------------*/
 
-import { vscode } from "../vscodeAdapter";
 import { Options } from "../omnisharp/options";
 import ShowInformationMessage from "./utils/ShowInformationMessage";
 import { Observable } from "rxjs";
@@ -53,11 +52,11 @@ function OmniSharpOptionChangeObservable(optionObservable: Observable<Options>):
     );
 }
 
-export function ShowOmniSharpConfigChangePrompt(optionObservable: Observable<Options>, vscode: vscode): Disposable {
+export function ShowOmniSharpConfigChangePrompt(optionObservable: Observable<Options>): Disposable {
     const subscription = OmniSharpOptionChangeObservable(optionObservable)
         .subscribe(_ => {
             let message = "OmniSharp configuration has changed. Would you like to relaunch the OmniSharp server with your changes?";
-            ShowInformationMessage(vscode, message, { title: "Restart OmniSharp", command: 'o.restart' });
+            ShowInformationMessage(message, { title: "Restart OmniSharp", command: 'o.restart' });
         });
 
     return new Disposable(subscription);
