@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as utils from './utils';
-import * as vscode from 'vscode';
+import * as vscode from 'coc.nvim';
 import { AddAssetResult, addAssetsIfNecessary } from '../assets';
 import reportDiagnostics, { Advisor } from '../features/diagnosticsProvider';
 import { safeLength, sum } from '../common';

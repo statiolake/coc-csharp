@@ -6,7 +6,7 @@
 import * as OmniSharp from './omnisharp/extension';
 import * as coreclrdebug from './coreclr-debug/activate';
 import * as util from './common';
-import * as vscode from 'vscode';
+import * as vscode from 'coc.nvim';
 
 import { ActivationFailure, ActiveTextEditorChanged } from './omnisharp/loggingEvents';
 import { WarningMessageObserver } from './observers/WarningMessageObserver';

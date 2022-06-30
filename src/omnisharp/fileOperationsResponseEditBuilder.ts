@@ -3,8 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as vscode from 'vscode';
-import { Uri } from 'vscode';
+import * as vscode from 'coc.nvim';
+import { Uri } from 'coc.nvim';
 import { LanguageMiddlewareFeature } from './LanguageMiddlewareFeature';
 import { FileModificationType, FileOperationResponse, ModifiedFileResponse, RenamedFileResponse } from "./protocol";
 import { toRange2 } from './typeConversion';

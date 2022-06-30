@@ -7,7 +7,7 @@ import * as child_process from 'child_process';
 import * as fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
-import * as vscode from 'vscode';
+import * as vscode from 'coc.nvim';
 
 import { PlatformInformation } from '../platform';
 import { findPowerShell, getExtensionPath } from '../common';

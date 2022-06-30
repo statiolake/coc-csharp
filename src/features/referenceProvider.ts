@@ -7,7 +7,7 @@ import AbstractSupport from './abstractProvider';
 import * as protocol from '../omnisharp/protocol';
 import * as serverUtils from '../omnisharp/utils';
 import {createRequest, toLocation} from '../omnisharp/typeConversion';
-import {ReferenceProvider, Location, TextDocument, CancellationToken, Position} from 'vscode';
+import {ReferenceProvider, Location, TextDocument, CancellationToken, Position} from 'coc.nvim';
 
 export default class OmnisharpReferenceProvider extends AbstractSupport implements ReferenceProvider {
 

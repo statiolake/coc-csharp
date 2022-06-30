@@ -8,7 +8,7 @@ import AbstractSupport from './abstractProvider';
 import * as protocol from '../omnisharp/protocol';
 import * as serverUtils from '../omnisharp/utils';
 import { toRange } from '../omnisharp/typeConversion';
-import * as vscode from 'vscode';
+import * as vscode from 'coc.nvim';
 import CompositeDisposable from '../CompositeDisposable';
 import { IDisposable } from '../Disposable';
 import { isVirtualCSharpDocument } from './virtualDocumentTracker';

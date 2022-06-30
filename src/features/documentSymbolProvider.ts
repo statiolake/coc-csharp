@@ -6,7 +6,7 @@
 import AbstractSupport from './abstractProvider';
 import * as protocol from '../omnisharp/protocol';
 import * as serverUtils from '../omnisharp/utils';
-import * as vscode from 'vscode';
+import * as vscode from 'coc.nvim';
 
 import Structure = protocol.V2.Structure;
 import SymbolKinds = protocol.V2.SymbolKinds;

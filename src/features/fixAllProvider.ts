@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as vscode from 'vscode';
+import * as vscode from 'coc.nvim';
 import * as serverUtils from '../omnisharp/utils';
 import * as protocol from '../omnisharp/protocol';
 import { OmniSharpServer } from '../omnisharp/server';

@@ -5,7 +5,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import * as vscode from 'vscode';
+import * as vscode from 'coc.nvim';
 import * as Razor from 'microsoft.aspnetcore.razor.vscode';
 import { EventStream } from '../EventStream';
 

@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscodeAdapter from './vscodeAdapter';
-import * as vscode from 'vscode';
+import * as vscode from 'coc.nvim';
 
 export class TextEditorAdapter implements vscodeAdapter.TextEditor {
 

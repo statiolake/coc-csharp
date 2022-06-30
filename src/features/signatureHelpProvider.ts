@@ -6,8 +6,8 @@
 import AbstractSupport from './abstractProvider';
 import * as serverUtils from '../omnisharp/utils';
 import { createRequest } from '../omnisharp/typeConversion';
-import { SignatureHelpProvider, SignatureHelp, SignatureInformation, ParameterInformation, CancellationToken, TextDocument, Position } from 'vscode';
-import { MarkdownString } from 'vscode';
+import { SignatureHelpProvider, SignatureHelp, SignatureInformation, ParameterInformation, CancellationToken, TextDocument, Position } from 'coc.nvim';
+import { MarkdownString } from 'coc.nvim';
 import { SignatureHelpParameter } from '../omnisharp/protocol';
 
 export default class OmniSharpSignatureHelpProvider extends AbstractSupport implements SignatureHelpProvider {

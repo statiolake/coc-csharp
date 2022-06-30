@@ -12,7 +12,7 @@ import * as protocol from './omnisharp/protocol';
 import * as serverUtils from './omnisharp/utils';
 import * as tasks from 'vscode-tasks';
 import * as util from './common';
-import * as vscode from 'vscode';
+import * as vscode from 'coc.nvim';
 
 import { OmniSharpServer } from './omnisharp/server';
 import { tolerantParse } from './json';

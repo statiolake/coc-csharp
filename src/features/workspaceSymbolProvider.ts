@@ -9,7 +9,7 @@ import OptionProvider from '../observers/OptionProvider';
 import * as protocol from '../omnisharp/protocol';
 import * as serverUtils from '../omnisharp/utils';
 import { toRange } from '../omnisharp/typeConversion';
-import { CancellationToken, Uri, WorkspaceSymbolProvider, SymbolInformation, SymbolKind } from 'vscode';
+import { CancellationToken, Uri, WorkspaceSymbolProvider, SymbolInformation, SymbolKind } from 'coc.nvim';
 import { LanguageMiddlewareFeature } from '../omnisharp/LanguageMiddlewareFeature';
 
 

@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as path from 'path';
-import * as vscode from 'vscode';
+import * as vscode from 'coc.nvim';
 import * as common from './../common';
 import { CoreClrDebugUtil, getTargetArchitecture } from './util';
 import { PlatformInformation } from './../platform';

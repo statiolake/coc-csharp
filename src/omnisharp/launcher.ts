@@ -8,7 +8,7 @@ import { ChildProcess } from 'child_process';
 
 import { PlatformInformation } from '../platform';
 import * as path from 'path';
-import * as vscode from 'vscode';
+import * as vscode from 'coc.nvim';
 import { Options } from './options';
 import { LaunchInfo } from './OmnisharpManager';
 import { IHostExecutableResolver } from '../constants/IHostExecutableResolver';

@@ -9,7 +9,7 @@ import * as path from 'path';
 import * as protocol from '../omnisharp/protocol';
 import * as serverUtils from "../omnisharp/utils";
 import * as utils from '../common';
-import * as vscode from 'vscode';
+import * as vscode from 'coc.nvim';
 import AbstractProvider from './abstractProvider';
 import { DebuggerEventsProtocol } from '../coreclr-debug/debuggerEventsProtocol';
 import { OmniSharpServer } from '../omnisharp/server';

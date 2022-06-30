@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as serverUtils from '../omnisharp/utils';
-import { Event, EventEmitter, TextDocument, TextDocumentContentProvider, TextEditor, Uri, window, workspace } from 'vscode';
+import { Event, EventEmitter, TextDocument, TextDocumentContentProvider, TextEditor, Uri, window, workspace } from 'coc.nvim';
 import { IDisposable } from '../Disposable';
 import { SourceGeneratedFileInfo, SourceGeneratedFileResponse, UpdateType } from '../omnisharp/protocol';
 import { OmniSharpServer } from '../omnisharp/server';

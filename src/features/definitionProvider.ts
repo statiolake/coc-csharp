@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as serverUtils from '../omnisharp/utils';
-import { CancellationToken, TypeDefinitionProvider, DefinitionProvider, Location, Position, TextDocument, Uri } from 'vscode';
+import { CancellationToken, TypeDefinitionProvider, DefinitionProvider, Location, Position, TextDocument, Uri } from 'coc.nvim';
 import { GoToTypeDefinitionRequest, GoToTypeDefinitionResponse, MetadataRequest, MetadataSource, V2 } from '../omnisharp/protocol';
 import { createRequest, toRange3, toVscodeLocation } from '../omnisharp/typeConversion';
 import AbstractSupport from './abstractProvider';

@@ -6,7 +6,7 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as serverUtils from './omnisharp/utils';
-import * as vscode from 'vscode';
+import * as vscode from 'coc.nvim';
 import { ParsedEnvironmentFile } from './coreclr-debug/ParsedEnvironmentFile';
 
 import { AssetGenerator, AssetOperations, addTasksJsonIfNecessary, createAttachConfiguration, createFallbackLaunchConfiguration, getBuildOperations } from './assets';

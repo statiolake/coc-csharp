@@ -5,7 +5,7 @@
 
 import { IDisposable } from "../Disposable";
 import { OmniSharpServer } from "../omnisharp/server";
-import * as vscode from 'vscode';
+import * as vscode from 'coc.nvim';
 import CompositeDisposable from "../CompositeDisposable";
 import * as serverUtils from '../omnisharp/utils';
 import { isVirtualCSharpDocument } from "./virtualDocumentTracker";

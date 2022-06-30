@@ -5,7 +5,7 @@
 
 import * as nls from 'vscode-nls';
 
-import { CompletionItem, CompletionItemKind, DocumentSelector, MarkedString } from 'vscode';
+import { CompletionItem, CompletionItemKind, DocumentSelector, MarkedString } from 'coc.nvim';
 import { IJSONContribution, ISuggestionsCollector } from './jsonContributions';
 import { XHRRequest, XHRResponse, getErrorStatusDescription } from 'request-light';
 

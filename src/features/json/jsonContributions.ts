@@ -10,7 +10,7 @@ import { configure as configureXHR, xhr } from 'request-light';
 import {
     CompletionItem, CompletionItemProvider, CompletionList, TextDocument, Position, Hover, HoverProvider,
     CancellationToken, Range, MarkedString, DocumentSelector, languages, workspace
-} from 'vscode';
+} from 'coc.nvim';
 import CompositeDisposable from '../../CompositeDisposable';
 
 export interface ISuggestionsCollector {

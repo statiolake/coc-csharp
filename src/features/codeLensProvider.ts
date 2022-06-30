@@ -5,7 +5,7 @@
 
 import * as protocol from '../omnisharp/protocol';
 import * as serverUtils from '../omnisharp/utils';
-import * as vscode from 'vscode';
+import * as vscode from 'coc.nvim';
 import { toLocation } from '../omnisharp/typeConversion';
 import AbstractProvider from './abstractProvider';
 import { OmniSharpServer } from '../omnisharp/server';

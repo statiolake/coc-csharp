@@ -10,7 +10,7 @@ import * as cp from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as protocol from '../omnisharp/protocol';
-import * as vscode from 'vscode';
+import * as vscode from 'coc.nvim';
 import { RemoteAttachPicker } from './processPicker';
 import { generateAssets } from '../assets';
 import { ShowOmniSharpChannel, CommandDotNetRestoreStart, CommandDotNetRestoreProgress, CommandDotNetRestoreSucceeded, CommandDotNetRestoreFailed } from '../omnisharp/loggingEvents';

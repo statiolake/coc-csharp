@@ -7,7 +7,7 @@ import * as fs from 'fs-extra';
 import { OmniSharpServer } from './server';
 import * as path from 'path';
 import * as protocol from './protocol';
-import * as vscode from 'vscode';
+import * as vscode from 'coc.nvim';
 import { MSBuildProject } from './protocol';
 import { CancellationToken } from 'vscode-languageserver-protocol';
 

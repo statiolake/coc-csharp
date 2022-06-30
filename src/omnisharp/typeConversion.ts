@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as protocol from './protocol';
-import * as vscode from 'vscode';
+import * as vscode from 'coc.nvim';
 
 export function toLocation(location: protocol.ResourceLocation | protocol.QuickFix): vscode.Location {
     const fileName = vscode.Uri.file(location.FileName);
