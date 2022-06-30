@@ -113,10 +113,12 @@ export function resourcesToLaunchTargets(resources: vscode.Uri[], maxProjectResu
     let workspaceFolderToUriMap = new Map<number, vscode.Uri[]>();
 
     const workspaceFolders = vscode.workspace.workspaceFolders.concat();
+    const workspaceFoldersUris = workspaceFolders.map(f => f.uri);
     for (let resource of localResources) {
         let folder = vscode.workspace.getWorkspaceFolder(resource.toString());
         if (folder) {
-            const index = workspaceFolders.indexOf(folder);
+            console.log("workspaceFolders:", workspaceFolders, "folder:", folder);
+            const index = workspaceFoldersUris.indexOf(folder.uri);
             let buckets: vscode.Uri[];
 
             if (workspaceFolderToUriMap.has(index)) {
@@ -146,6 +148,7 @@ export function resourcesAndFolderMapToLaunchTargets(resources: vscode.Uri[], wo
     let otherTargets: LaunchTarget[] = [];
 
     workspaceFolderToUriMap.forEach((resources, folderIndex) => {
+        console.log("folderIndex:", folderIndex);
         let hasProjectJsonAtRoot = false;
         let hasCSX = false;
         let hasCake = false;
@@ -160,7 +163,7 @@ export function resourcesAndFolderMapToLaunchTargets(resources: vscode.Uri[], wo
                 const dirname = path.dirname(resource.fsPath);
                 solutionTargets.push({
                     label: path.basename(resource.fsPath),
-                    description: vscode.workspace.asRelativePath(dirname),
+                    description: dirname,
                     target: resource.fsPath,
                     directory: path.dirname(resource.fsPath),
                     workspaceKind: LaunchTargetKind.Solution
@@ -172,7 +175,7 @@ export function resourcesAndFolderMapToLaunchTargets(resources: vscode.Uri[], wo
                 hasProjectJsonAtRoot = hasProjectJsonAtRoot || dirname === folderPath;
                 projectJsonTargets.push({
                     label: path.basename(resource.fsPath),
-                    description: vscode.workspace.asRelativePath(dirname),
+                    description: dirname,
                     target: dirname,
                     directory: dirname,
                     workspaceKind: LaunchTargetKind.ProjectJson
@@ -186,7 +189,7 @@ export function resourcesAndFolderMapToLaunchTargets(resources: vscode.Uri[], wo
                 // is supported.
                 projectTargets.push({
                     label: path.basename(resource.fsPath),
-                    description: vscode.workspace.asRelativePath(dirname),
+                    description: dirname,
                     target: dirname,
                     directory: dirname,
                     workspaceKind: LaunchTargetKind.Project
