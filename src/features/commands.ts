@@ -12,7 +12,6 @@ import * as path from 'path';
 import * as protocol from '../omnisharp/protocol';
 import * as vscode from 'coc.nvim';
 import { RemoteAttachPicker } from './processPicker';
-import { generateAssets } from '../assets';
 import { ShowOmniSharpChannel, CommandDotNetRestoreStart, CommandDotNetRestoreProgress, CommandDotNetRestoreSucceeded, CommandDotNetRestoreFailed } from '../omnisharp/loggingEvents';
 import { EventStream } from '../EventStream';
 import { PlatformInformation } from '../platform';
@@ -47,9 +46,6 @@ export default function registerCommands(context: vscode.ExtensionContext, serve
         const attachItem = await RemoteAttachPicker.ShowAttachEntries(args, platformInfo);
         return attachItem ? attachItem.id : Promise.reject<string>(new Error("Could not find a process id to attach."));
     }));
-
-    // Register command for generating tasks.json and launch.json assets.
-    disposable.add(vscode.commands.registerCommand('dotnet.generateAssets', async (selectedIndex) => generateAssets(server, selectedIndex)));
 
     disposable.add(vscode.commands.registerCommand('csharp.showDecompilationTerms', async () => showDecompilationTerms(context, server, optionProvider)));
 

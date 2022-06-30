@@ -5,7 +5,6 @@
 
 import * as utils from './utils';
 import * as vscode from 'coc.nvim';
-import { AddAssetResult, addAssetsIfNecessary } from '../assets';
 import reportDiagnostics, { Advisor } from '../features/diagnosticsProvider';
 import { safeLength, sum } from '../common';
 import CodeActionProvider from '../features/codeActionProvider';
@@ -135,17 +134,6 @@ export async function activate(context: vscode.ExtensionContext, packageJSON: an
     }));
 
     disposables.add(registerCommands(context, server, platformInfo, eventStream, optionProvider, omnisharpMonoResolver, packageJSON, extensionPath));
-
-    if (!context.workspaceState.get<boolean>('assetPromptDisabled')) {
-        disposables.add(server.onServerStart(() => {
-            // Update or add tasks.json and launch.json
-            addAssetsIfNecessary(server).then(result => {
-                if (result === AddAssetResult.Disable) {
-                    context.workspaceState.update('assetPromptDisabled', true);
-                }
-            });
-        }));
-    }
 
     // After server is started (and projects are loaded), check to see if there are
     // any project.json projects if the suppress option is not set. If so, notify the user about migration.
