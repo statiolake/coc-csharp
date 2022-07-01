@@ -172,7 +172,7 @@ class DiagnosticsProvider extends AbstractSupport {
     }
 
     private shouldIgnoreDocument(document: vscode.TextDocument) {
-        if (document.languageId !== 'csharp') {
+        if (document.languageId !== 'cs') {
             return true;
         }
 

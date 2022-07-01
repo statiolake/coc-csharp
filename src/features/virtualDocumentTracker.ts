@@ -24,7 +24,7 @@ async function trackCurrentVirtualDocuments(server: OmniSharpServer, eventStream
 }
 
 export function isVirtualCSharpDocument(document: TextDocument) {
-    if (document.languageId !== 'csharp') {
+    if (document.languageId !== 'cs') {
         return false;
     }
 
