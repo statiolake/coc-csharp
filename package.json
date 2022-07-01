@@ -40,7 +40,7 @@
   },
   "main": "./dist/extension.js",
   "scripts": {
-    "vscode:prepublish": "tsc -p ./ && webpack --mode production",
+    "prepare": "tsc -p ./ && webpack --mode production",
     "compile": "tsc -p ./",
     "compileDev": "tsc -p ./ && webpack --mode development",
     "watch": "tsc -watch -p ./",
