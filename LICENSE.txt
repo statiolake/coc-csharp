@@ -1,5 +1,6 @@
 MIT License
 
+Copyright (c) 2022 statiolake <statiolake@gmail.com>
 Copyright (c) .NET Foundation and Contributors
 All Rights Reserved
 
