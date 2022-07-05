@@ -17,7 +17,7 @@ export class WarningMessageObserver {
         this.warningMessageDebouncer = new Subject<BaseEvent>();
         this.warningMessageDebouncer.pipe(debounceTime(1500, scheduler)).subscribe(async event => {
             let message = "Some projects have trouble loading. Please review the output for more details.";
-            await showWarningMessage(message, { title: "Show Output", command: 'o.showOutput' });
+            await showWarningMessage(message, { title: "Show_Output", command: 'o.showOutput' });
         });
     }
 

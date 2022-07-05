@@ -144,7 +144,7 @@ export async function activate(context: vscode.ExtensionContext, packageJSON: an
                 .then(workspaceInfo => {
                     if (workspaceInfo.DotNet && workspaceInfo.DotNet.Projects.length > 0) {
                         const shortMessage = 'project.json is no longer a supported project format for .NET Core applications.';
-                        const moreDetailItem: vscode.MessageItem = { title: 'More Detail' };
+                        const moreDetailItem: vscode.MessageItem = { title: 'More_Detail' };
                         vscode.window.showWarningMessage(shortMessage, moreDetailItem)
                             .then(item => {
                                 eventStream.post(new ProjectJsonDeprecatedWarning());

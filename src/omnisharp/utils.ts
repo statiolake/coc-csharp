@@ -275,8 +275,8 @@ async function showBlazorDebuggingExtensionPrompt(server: OmniSharpServer) {
         server.sessionProperties[promptShownKey] = true;
 
         const msg = 'The Blazor WASM Debugging Extension is required to debug Blazor WASM apps in VS Code.';
-        const result = await vscode.window.showInformationMessage(msg, 'Install Extension', 'Close');
-        if (result === 'Install Extension') {
+        const result = await vscode.window.showInformationMessage(msg, 'Install_Extension', 'Close');
+        if (result === 'Install_Extension') {
             const uriToOpen = vscode.Uri.parse('vscode:extension/ms-dotnettools.blazorwasm-companion');
             await vscode.commands.executeCommand('vscode.open', uriToOpen);
         }
